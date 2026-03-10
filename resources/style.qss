@@ -1,0 +1,200 @@
+QWidget#central {
+    background: transparent;
+}
+
+QWidget#titlebar {
+    background: #252525;
+}
+
+QWidget#title-separator {
+    background: #aaa;
+}
+
+QWidget#separator {
+    background: #aaa;
+}
+
+QLabel#title {
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+QPushButton {
+    color: #aaa;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+}
+
+QPushButton:focus {
+    outline: none;
+}
+
+QPushButton:hover {
+    background: #404040;
+}
+
+QPushButton#btnClose:hover {
+    background: #e81123;
+    color: white;
+}
+
+QWidget#content {
+    background: #181818;
+    color: #ddd;
+}
+
+QWidget#credits QLabel {
+    color: #aaa;
+    padding: 0px 0px;
+    font-family: Segoe UI;
+    font-size: 15pt;
+}
+
+QWidget#credits QLabel#top {
+    font-size: 18pt;
+    font-style: italic;
+    font-weight: 600;
+}
+
+QWidget#notes-edit QLineEdit {
+    background: #2d2d2d;
+    color: #e0e0e0;
+    font-family: Segoe UI;
+    font-size: 13pt;
+    border: 2px solid #555555;
+    border-radius: 10px;
+    padding: 8px 14px;
+}
+
+QWidget#notes-edit QLineEdit:focus {
+    border: 2px solid #4a90e2;
+    background: #363636;
+}
+
+QLabel#note-edit-status {
+    background: #2d2d2d;
+    border: 2px solid #555555;
+    border-radius: 10px;
+    font-family: Segoe UI;
+    font-size: 16pt;
+    color: #aaa;
+}
+
+QWidget#timeline-marker-container {
+    background: #2d2d2d;
+    border: 2px solid #555555;
+    border-radius: 20px;
+}
+
+QWidget#miss-marker-container {
+    background: #2d2d2d;
+    border: 2px solid #cc2222;
+    border-radius: 20px;
+}
+
+QWidget#timeline-marker-container[checked=true] {
+    border: 2px solid #4a90e2;
+}
+
+QWidget#miss-marker-container[checked=true] {
+    border: 2px solid #4a90e2;
+}
+
+QPushButton#timeline-marker-label {
+    background: transparent;
+    border: none;
+    border-radius: 20px;
+    color: #e0e0e0;
+    font-family: Segoe UI;
+    font-size: 11pt;
+}
+
+QPushButton#timeline-marker-label:hover {
+    font-weight: 800;
+}
+
+QPushButton#timeline-marker-delete {
+    color: #aaa;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 9pt;
+}
+
+QPushButton#timeline-marker-delete:hover {
+    background: #e81123;
+    color: white;
+}
+
+QScrollArea {
+    background: #1e1e1e;
+    border: 1px solid #555;
+}
+
+QScrollArea QWidget {
+    background: #1e1e1e;
+}
+
+QScrollBar:horizontal {
+    height: 10px;
+    background: #2d2d2d;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #5a5a5a;
+    min-width: 40px;
+    border-radius: 5px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #777;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+    height: 0px;
+    background: none;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+QLabel#timeline-section-label {
+    color: #ccc;
+    font-family: Segoe UI;
+    font-size: 11pt;
+}
+
+QPushButton#add {
+    color: #68c627;
+    font-size: 12pt;
+    border: 2px solid #68c627;
+    border-radius: 15px;
+    padding: 0px 0px 3px 2px;
+}
+
+QPushButton#clear {
+    color: #cc2222;
+    font-size: 8pt;
+    border: 2px solid #cc2222;
+    border-radius: 15px;
+    padding: 0px 0px 1px 1px;
+}
+
+QPushButton#miss {
+    color: gray;
+    font-size: 8pt;
+    border: 2px solid gray;
+    border-radius: 15px;
+    padding: 0px 0px 1px 1px;
+}
+
+QPushButton#miss:checked {
+    color: #cc2222;
+    border: 2px solid #cc2222;
+}
