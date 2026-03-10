@@ -7,7 +7,7 @@ import os
 from .info import ImageContainer, Credits
 from .graph import StrainGraph
 from .timeline import Timeline
-from ..beatmap import BeatmapNotes
+from ..beatmap import BeatmapNotes, StrainsData
 from ..utils import call_osu
 from .. import settings
 
@@ -204,8 +204,7 @@ class PlaytestNotesEdit(QWidget):
         ids = [self.timeline.add_general_marker() for _ in self.current_notes.general_notes()]
         self.current_notes.set_general_ids(ids)
 
-    # TODO: merge timings and strains into one data structure
-    def select_map(self, notes: BeatmapNotes, timings: list[int], strains: list[float]):
+    def select_map(self, notes: BeatmapNotes, strains: StrainsData):
         metadata = notes.metadata
 
         self.song_info.set_title(metadata.title)
@@ -220,7 +219,7 @@ class PlaytestNotesEdit(QWidget):
 
         self.clear_notes()
         self.current_notes = notes
-        self.graph.plot(timings, strains)
+        self.graph.plot(strains)
         self.load_notes()
 
     def init_gameplay(self):

@@ -5,7 +5,7 @@ from enum import IntEnum
 from PySide6.QtCore import QObject, QThread, Signal, QUrl
 from PySide6.QtWebSockets import QWebSocket
 
-from .beatmap import BeatmapMetadata
+from .beatmap import BeatmapMetadata, StrainsData
 
 
 class OsuState(IntEnum):
@@ -64,7 +64,7 @@ class WSProxy(QObject):
     time_updated = Signal(int)                      # emitted only while playing or editing
     player_missed = Signal(int)
     state_updated = Signal(int)
-    map_selected = Signal(object, list, list)       # BeatmapMetadata, lists of timings and strain values
+    map_selected = Signal(object, object)           # BeatmapMetadata and StrainsData
 
     def __init__(self):
         super().__init__()
@@ -128,10 +128,8 @@ class WSProxy(QObject):
         metadata['md5'] = md5
         metadata = BeatmapMetadata(**metadata)
 
-        strains = message['menu']['pp']['strainsAll']
-        timings = strains['xaxis'].copy()
-        data = [d if d > 0 else 0 for d in strains['series'][0]['data']]    # change weird -100 points to 0
-        self.map_selected.emit(metadata, timings, data)
+        strains = StrainsData.from_dict(message['menu']['pp']['strainsAll'])
+        self.map_selected.emit(metadata, strains)
 
     def on_first_message(self, message: dict):
         # making sure state and map (if applicable) are initialized before timings

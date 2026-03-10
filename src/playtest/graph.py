@@ -5,6 +5,8 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 from enum import StrEnum
 
+from ..beatmap import StrainsData
+
 
 class GraphColors(StrEnum):
     PLOT = '#ccaa33'
@@ -103,18 +105,11 @@ class StrainGraph(FigureCanvas):
 
         self.draw()
 
-    def plot(self, time_points: list[int], strains: list[float]):
-        # tosu sometimes adds a bunch of 0s at the end
-        for i in range(len(strains) - 1, 0, -1):
-            if strains[i] > 0:
-                break
-        time_points = time_points[:i + 2]
-        strains = strains[:i + 2]
-
-        # ... and sometimes doesn't
-        if strains[-1]:
-            time_points.append(time_points[-1] * 2 - time_points[-2])
-            strains.append(0)
+    def plot(self, strains: StrainsData):
+        if len(strains.xaxis) < 2:
+            return
+        time_points = strains.xaxis
+        strains = strains.strains
 
         self.axes.cla()
         self.axes.plot(time_points, strains, color=GraphColors.PLOT)

@@ -14,7 +14,7 @@ import sys
 
 from .playtest.notes import PlaytestNotesEdit
 from .ws import WSProxy, OsuState
-from .beatmap import BeatmapMetadata, BeatmapNotesCollection
+from .beatmap import BeatmapMetadata, BeatmapNotesCollection, StrainsData
 
 
 class MainWindow(QMainWindow):
@@ -108,10 +108,9 @@ class MainWindow(QMainWindow):
 
         self.notes_edit.set_editor_mode(state == OsuState.EDIT)
 
-    # TODO: merge timings and strains into one data structure
-    def on_map_update(self, metadata: BeatmapMetadata, timings: list[int], strains: list[float]):
+    def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
         notes = self._note_collection.select_map(metadata)
-        self.notes_edit.select_map(notes, timings, strains)
+        self.notes_edit.select_map(notes, strains)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
