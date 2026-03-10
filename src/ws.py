@@ -12,9 +12,15 @@ class OsuState(IntEnum):
     MAIN_MENU = 0
     EDIT = 1
     GAMEPLAY = 2
+    CLOSED = 3
     MAP_SELECT_EDIT = 4
     MAP_SELECT_PLAY = 5
     RESULT_SCREEN = 7
+    MULTIPLAYER_LOBBY = 11
+    MULTIPLAYER_ROOM = 12
+    MULTIPLAYER_MAP_SELECT = 13
+    MULTIPLAYER_RESULT_SCREEN = 14
+    UPDATING_MAPS = 19
 
     GAMEPLAY_PAUSE = 100
     GAMEPLAY_FAIL = 101
@@ -82,6 +88,8 @@ class WSProxy(QObject):
         self._wsthread.start()
 
     def update_state(self, state: OsuState | int):
+        if state == self._state:
+            return
         if state == OsuState.GAMEPLAY:
             self._combo = 0
         try:
@@ -131,7 +139,7 @@ class WSProxy(QObject):
         self._wsworker.message_received.disconnect(self.on_first_message)
 
         self.update_state(message['menu']['state'])
-        if self._state != OsuState.UNKNOWN:
+        if self._state not in [OsuState.UNKNOWN, OsuState.CLOSED, OsuState.MAIN_MENU]:
             self.update_map(message)
 
         self._wsworker.message_received.connect(self.on_message)
@@ -140,29 +148,25 @@ class WSProxy(QObject):
         state = message['menu']['state']
         time_ms = message['menu']['bm']['time']['current']
 
-        # trackable state change
-        if (state != self._state and
-                (state != OsuState.GAMEPLAY or self._state not in [OsuState.GAMEPLAY_PAUSE, OsuState.GAMEPLAY_FAIL])):
-            self.update_state(state)
-
-        # pausing / failing
-        elif state == OsuState.GAMEPLAY and self._time_ms == time_ms:
+        # differentiate between gameplay, pause and fail
+        if (
+                state == OsuState.GAMEPLAY and
+                self._time_ms == time_ms and
+                time_ms > message['menu']['bm']['time']['firstObj'] - 500       # compensate for the initial stutters
+        ):
             if message['gameplay']['hp']['normal']:
-                self.update_state(OsuState.GAMEPLAY_PAUSE)
+                state = OsuState.GAMEPLAY_PAUSE
             else:
-                self.update_state(OsuState.GAMEPLAY_FAIL)
+                state = OsuState.GAMEPLAY_FAIL
 
-        # unpausing
-        elif self._state == OsuState.GAMEPLAY_PAUSE and time_ms != self._time_ms:
-            self.update_state(OsuState.GAMEPLAY)
+        self.update_state(state)
 
         # selecting a map
-        elif state in [OsuState.MAP_SELECT_PLAY, OsuState.MAP_SELECT_EDIT, OsuState.MAIN_MENU]:
-            if message['menu']['bm']['md5'] != self._map_md5:
-                self.update_map(message)
+        if message['menu']['bm']['md5'] != self._map_md5:
+            self.update_map(message)
 
         self.update_time(time_ms)
-        if self._state == OsuState.GAMEPLAY:
+        if state == OsuState.GAMEPLAY:
             self.update_combo(message['gameplay']['combo']['current'], time_ms)
 
     def deleteLater(self):
