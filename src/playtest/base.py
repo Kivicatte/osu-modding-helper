@@ -1,0 +1,80 @@
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Signal
+
+from enum import IntEnum
+
+
+class CommentEditState(IntEnum):
+    INIT = 0
+    LOADED = 1
+    EDITING = 2
+    SAVED = 3
+
+
+class CommentEditBase(QWidget):
+    edit_finished = Signal(str)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self._state = CommentEditState.INIT
+        self.on_state_change()
+
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, new_state: CommentEditState):
+        if self._state != new_state:
+            self._state = new_state
+            self.on_state_change()
+
+    def on_edit(self, text: str):
+        self.state = CommentEditState.EDITING
+
+    def on_save(self):
+        self.edit_finished.emit(self.get_text())
+
+    def on_state_change(self):
+        raise NotImplementedError()
+
+    def get_text(self) -> str:
+        raise NotImplementedError()
+
+    def set_text(self, text: str) -> None:
+        self.state = CommentEditState.LOADED if text else CommentEditState.INIT
+
+        # could use @abstractmethod but resolving metaclass conflict between ABC and QWidget is more pain
+        if self.__class__ == CommentEditBase:
+            raise NotImplementedError()
+
+    def remove_text(self):
+        self.set_text('')
+
+    def save(self):
+        self.state = CommentEditState.SAVED
+
+
+class CommentUIElementBase(QWidget):
+    activate_clicked = Signal()
+    deactivate_clicked = Signal()
+    delete_clicked = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def activate(self):
+        raise NotImplementedError()
+
+    def deactivate(self):
+        raise NotImplementedError()
+
+    def on_activate(self):
+        self.activate_clicked.emit()
+
+    def on_deactivate(self):
+        self.deactivate_clicked.emit()
+
+    def on_delete(self):
+        self.delete_clicked.emit()

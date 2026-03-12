@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 import itertools as it
@@ -5,6 +7,7 @@ from collections import namedtuple
 from typing import Iterable
 
 from .settings import NOTES_PATH
+from .playtest.base import CommentEditBase, CommentUIElementBase
 
 
 BeatmapMetadata = namedtuple(
@@ -56,6 +59,122 @@ class StrainsData:
                 return cls(xaxis, data)
             case _:
                 return cls([], [])
+
+
+class CommentBase:
+    _ID: int = 0
+    _current_active: CommentBase = None
+
+    def __init__(self, text: str = ''):
+        super().__init__()
+
+        self._id: int = CommentBase._ID
+        CommentBase._ID += 1
+
+        self._text: str = text
+        self._active: bool = False
+
+        self._ui_edit: CommentEditBase | None = None
+        self._ui_activation: list[CommentUIElementBase] = []
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def active(self):
+        return self._active
+
+    @property
+    def text(self):
+        return self._text
+
+    def __str__(self):
+        return self.text
+
+    def register_edit_ui(self, ui: CommentEditBase):
+        if self._ui_edit:
+            self.unregister_edit_ui()
+
+        self._ui_edit = ui
+        ui.edit_finished.connect(self._set_text)
+
+    def unregister_edit_ui(self):
+        self._ui_edit.edit_finished.disconnect(self._set_text)
+        self._ui_edit = None
+
+    def register_activation_ui(self, ui: CommentUIElementBase):
+        self._ui_activation.append(ui)
+        ui.activate_clicked.connect(self.on_activate)
+        ui.deactivate_clicked.connect(self.on_deactivate)
+        ui.delete_clicked.connect(self.delete_activation_ui)
+
+    def unregister_activation_ui(self, ui: CommentUIElementBase):
+        try:
+            self._ui_activation.remove(ui)
+            ui.activate_clicked.disconnect(self.on_activate)
+            ui.deactivate_clicked.disconnect(self.on_deactivate)
+            ui.delete_clicked.disconnect(self.delete_activation_ui)
+        except ValueError:
+            print('Attempted to unregister a comment UI element that was already not registered')
+
+    def delete_activation_ui(self):
+        for ui in list(self._ui_activation):
+            self.unregister_activation_ui(ui)
+            ui.deleteLater()
+
+    def on_activate(self):
+        if self.active:
+            return
+        if CommentBase._current_active:
+            CommentBase._current_active.on_deactivate()
+        self._activate()
+
+    def on_deactivate(self):
+        if not self.active:
+            return
+        self._deactivate()
+
+    def _activate(self):
+        CommentBase._current_active = self
+        self._active = True
+
+        self._ui_edit.set_text(self.text)
+
+        for ui in self._ui_activation:
+            ui.activate()
+
+    def _deactivate(self):
+        CommentBase._current_active = None
+        self._active = False
+
+        self._ui_edit.set_text('')
+
+        for ui in self._ui_activation:
+            ui.deactivate()
+
+    def _set_text(self, text: str):         # works as a Qt slot rather than a setter, so no setter decorator
+        self._text = text
+
+
+class GeneralComment(CommentBase):
+    pass
+
+
+class TimelineComment(CommentBase):
+    def __init__(self, time_ms: int, text: str = ''):
+        super().__init__(text)
+
+        self._time_ms = time_ms
+
+    @property
+    def time_ms(self):
+        return self._time_ms
+
+
+class MissComment(TimelineComment):
+    def __init__(self, time_ms: int):
+        super().__init__(time_ms, text='miss')
 
 
 class BeatmapNotes:
