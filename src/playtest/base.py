@@ -4,6 +4,13 @@ from PySide6.QtCore import Signal
 from enum import IntEnum
 
 
+class CommentType(IntEnum):
+    UNDEFINED = 0
+    GENERAL = 1
+    TIMELINE = 2
+    MISS = 3
+
+
 class CommentEditState(IntEnum):
     INIT = 0
     LOADED = 1
@@ -64,11 +71,20 @@ class CommentUIElementBase(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.setProperty('active', False)
+        self.setProperty('type', int(CommentType.UNDEFINED))
+
+    def set_type(self, type_: CommentType):
+        self.setProperty('type', int(type_))
+        self._redraw()
+
     def activate(self):
-        raise NotImplementedError()
+        self.setProperty('active', True)
+        self._redraw()
 
     def deactivate(self):
-        raise NotImplementedError()
+        self.setProperty('active', False)
+        self._redraw()
 
     def on_activate(self):
         self.activate_clicked.emit()
@@ -78,3 +94,8 @@ class CommentUIElementBase(QWidget):
 
     def on_delete(self):
         self.delete_clicked.emit()
+
+    def _redraw(self):
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()

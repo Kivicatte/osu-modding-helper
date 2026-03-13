@@ -7,7 +7,7 @@ from collections import namedtuple
 from typing import Iterable
 
 from .settings import NOTES_PATH
-from .playtest.base import CommentEditBase, CommentUIElementBase
+from .playtest.base import CommentEditBase, CommentUIElementBase, CommentType
 
 
 BeatmapMetadata = namedtuple(
@@ -61,19 +61,21 @@ class StrainsData:
                 return cls([], [])
 
 
-class CommentBase:
+class Comment:
     _ID: int = 0
-    _current_active: CommentBase = None
+    _current_active: Comment = None
 
-    def __init__(self, text: str = ''):
+    def __init__(self, text: str = '', time_ms: int = 0, type_: CommentType = CommentType.UNDEFINED):
         super().__init__()
 
-        self._id: int = CommentBase._ID
-        CommentBase._ID += 1
+        self._id: int = Comment._ID
+        Comment._ID += 1
 
-        self._text: str = text
+        self._type = type_
+        self._time_ms = time_ms
+        self._text = text
+
         self._active: bool = False
-
         self._ui_edit: CommentEditBase | None = None
         self._ui_activation: list[CommentUIElementBase] = []
 
@@ -88,6 +90,21 @@ class CommentBase:
     @property
     def text(self):
         return self._text
+
+    @property
+    def time_ms(self):
+        return self._time_ms
+
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, new_type: CommentType):
+        self._type = new_type
+
+        for ui in self._ui_activation:
+            ui.set_type(new_type)
 
     def __str__(self):
         return self.text
@@ -108,6 +125,7 @@ class CommentBase:
         ui.activate_clicked.connect(self.on_activate)
         ui.deactivate_clicked.connect(self.on_deactivate)
         ui.delete_clicked.connect(self.delete_activation_ui)
+        ui.set_type(self._type)
 
     def unregister_activation_ui(self, ui: CommentUIElementBase):
         try:
@@ -126,8 +144,8 @@ class CommentBase:
     def on_activate(self):
         if self.active:
             return
-        if CommentBase._current_active:
-            CommentBase._current_active.on_deactivate()
+        if Comment._current_active:
+            Comment._current_active.on_deactivate()
         self._activate()
 
     def on_deactivate(self):
@@ -136,7 +154,7 @@ class CommentBase:
         self._deactivate()
 
     def _activate(self):
-        CommentBase._current_active = self
+        Comment._current_active = self
         self._active = True
 
         self._ui_edit.set_text(self.text)
@@ -145,7 +163,7 @@ class CommentBase:
             ui.activate()
 
     def _deactivate(self):
-        CommentBase._current_active = None
+        Comment._current_active = None
         self._active = False
 
         self._ui_edit.set_text('')
@@ -155,26 +173,8 @@ class CommentBase:
 
     def _set_text(self, text: str):         # works as a Qt slot rather than a setter, so no setter decorator
         self._text = text
-
-
-class GeneralComment(CommentBase):
-    pass
-
-
-class TimelineComment(CommentBase):
-    def __init__(self, time_ms: int, text: str = ''):
-        super().__init__(text)
-
-        self._time_ms = time_ms
-
-    @property
-    def time_ms(self):
-        return self._time_ms
-
-
-class MissComment(TimelineComment):
-    def __init__(self, time_ms: int):
-        super().__init__(time_ms, text='miss')
+        if self.type == CommentType.MISS and text != 'miss':
+            self.type = CommentType.TIMELINE
 
 
 class BeatmapNotes:
