@@ -59,6 +59,8 @@ class Marker(CommentUIElementBase):
 
 
 class SectionControls(QWidget):
+    _BUTTON_SIZE = 30
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
