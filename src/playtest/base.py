@@ -1,14 +1,14 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 
 
-class CommentType(IntEnum):
-    UNDEFINED = 0
-    GENERAL = 1
-    TIMELINE = 2
-    MISS = 3
+class CommentType(StrEnum):
+    UNDEFINED = 'undef'
+    GENERAL = 'general'
+    TIMELINE = 'timeline'
+    MISS = 'miss'
 
 
 class CommentEditState(IntEnum):

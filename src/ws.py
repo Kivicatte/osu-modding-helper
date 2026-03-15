@@ -5,7 +5,7 @@ from enum import IntEnum
 from PySide6.QtCore import QObject, QThread, Signal, QUrl
 from PySide6.QtWebSockets import QWebSocket
 
-from .beatmap import BeatmapMetadata, StrainsData
+from .beatmap.data import StrainsData, BeatmapMetadata
 
 
 class OsuState(IntEnum):
@@ -126,6 +126,8 @@ class WSProxy(QObject):
         metadata.pop('full')        # tosu doesn't handle this correctly
         metadata['bg'] = os.path.join(message['settings']['folders']['songs'], metadata['folder'], metadata['bg'])
         metadata['md5'] = md5
+        metadata['id'] = bm['id']
+        metadata['setid'] = bm['set']
         metadata = BeatmapMetadata(**metadata)
 
         strains = StrainsData.from_dict(message['menu']['pp']['strainsAll'])
