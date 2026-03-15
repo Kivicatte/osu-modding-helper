@@ -97,8 +97,10 @@ class Comment:
 
     def delete_activation_ui(self):
         for ui in list(self._ui_activation):
-            self.unregister_activation_ui(ui)
-            ui.deleteLater()
+            ui.activate_clicked.disconnect(self.on_activate)
+            ui.deactivate_clicked.disconnect(self.on_deactivate)
+            ui.delete_clicked.disconnect(self.delete_activation_ui)
+        self._ui_activation.clear()
 
     def on_activate(self):
         self.parent.activate_comment(self)

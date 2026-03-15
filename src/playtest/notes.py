@@ -1,30 +1,34 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QLineEdit, QSizePolicy
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QImage
 
 import os
 
+from .base import CommentEditBase, CommentEditState
 from .info import ImageContainer, Credits
 from .graph import StrainGraph
-from .timeline import Timeline
-from ..beatmap import BeatmapNotes, StrainsData
+from .marker import MarkerSection
+from ..beatmap.comment import BeatmapComments
+from ..beatmap.data import StrainsData
 from ..utils import call_osu
 from .. import settings
 
 
-# TODO: handle removing the note that's currently highlighted
-
-
-class NoteEditLine(QWidget):
-    returnPressed = Signal()
+class CommentEditLine(CommentEditBase):
+    _status_text = {
+        CommentEditState.INIT: '',
+        CommentEditState.EDITING: '...',
+        CommentEditState.SAVED: '✔',
+        CommentEditState.LOADED: ''
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self._init_ui()
 
-        self.line_edit.textChanged.connect(self._on_text_edit)
-        self.line_edit.returnPressed.connect(self._on_save)
+        self.line_edit.textChanged.connect(self.on_edit)
+        self.line_edit.returnPressed.connect(self.on_save)
 
     def _init_ui(self):
         self.setFixedHeight(50)
@@ -46,21 +50,15 @@ class NoteEditLine(QWidget):
         self.status_icon.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_icon)
 
-    def _on_text_edit(self):
-        if self.line_edit.text():
-            self.status_icon.setText('...')
-        else:
-            self.status_icon.setText('')
-
-    def _on_save(self):
-        self.returnPressed.emit()
-        self.status_icon.setText('✔')
-
-    def text(self):
+    def get_text(self) -> str:
         return self.line_edit.text()
 
-    def setText(self, text: str):
+    def set_text(self, text: str) -> None:
+        super().set_text(text)
         self.line_edit.setText(text)
+
+    def on_state_change(self):
+        self.status_icon.setText(self._status_text[self.state])
 
 
 class PlaytestNotesEdit(QWidget):
@@ -69,7 +67,7 @@ class PlaytestNotesEdit(QWidget):
 
         self._init_ui()
 
-        self.current_notes: BeatmapNotes | None = None
+        self.current_notes: BeatmapComments | None = None
         self._current_time: int = -1000000
         self._current_general_note: int | None = None
         self._last_miss: int = -1000000
@@ -120,7 +118,7 @@ class PlaytestNotesEdit(QWidget):
 
         layout.addWidget(self.graph, stretch=1)
 
-        self.timeline = Timeline()
+        self.timeline = MarkerSection()
         layout.addWidget(self.timeline)
 
     def set_time(self, time_ms: int):
@@ -204,7 +202,7 @@ class PlaytestNotesEdit(QWidget):
         ids = [self.timeline.add_general_marker() for _ in self.current_notes.general_notes()]
         self.current_notes.set_general_ids(ids)
 
-    def select_map(self, notes: BeatmapNotes, strains: StrainsData):
+    def select_map(self, notes: BeatmapComments, strains: StrainsData):
         metadata = notes.metadata
 
         self.song_info.set_title(metadata.title)

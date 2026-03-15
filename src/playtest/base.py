@@ -11,6 +11,9 @@ class CommentType(StrEnum):
     MISS = 'miss'
 
 
+timed_comment_types = [CommentType.TIMELINE, CommentType.MISS]
+
+
 class CommentEditState(IntEnum):
     INIT = 0
     LOADED = 1
@@ -68,11 +71,21 @@ class CommentUIElementBase(QWidget):
     deactivate_clicked = Signal()
     delete_clicked = Signal()
 
-    def __init__(self, parent=None):
+    _ID = 0
+
+    def __init__(self, type_: CommentType = CommentType.UNDEFINED, parent=None):
         super().__init__(parent)
 
+        self._id = CommentUIElementBase._ID
+        CommentUIElementBase._ID += 1
+
         self.setProperty('active', False)
-        self.setProperty('type', int(CommentType.UNDEFINED))
+        self.setProperty('type', int(type_))
+        self._redraw()
+
+    @property
+    def id(self):
+        return self._id
 
     def set_type(self, type_: CommentType):
         self.setProperty('type', int(type_))
@@ -94,6 +107,7 @@ class CommentUIElementBase(QWidget):
 
     def on_delete(self):
         self.delete_clicked.emit()
+        self.deleteLater()
 
     def _redraw(self):
         self.style().unpolish(self)
