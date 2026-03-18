@@ -11,7 +11,7 @@ class Marker(CommentUIElementBase):
 
         self._init_ui()
 
-        self.button.clicked.connect(self._on_click)
+        self.button.clicked.connect(self.on_toggle)
         self.delete_button.clicked.connect(self.on_delete)
 
         self._time_ms = time_ms
@@ -43,12 +43,6 @@ class Marker(CommentUIElementBase):
         self.delete_button.setObjectName('timeline-marker-delete')
         self.delete_button.setFixedSize(20, 20)
         layout.addWidget(self.delete_button)
-
-    def _on_click(self):
-        if self.property('active'):
-            self.on_deactivate()
-        else:
-            self.on_activate()
 
     @property
     def time_ms(self):
@@ -150,7 +144,7 @@ class MarkerSection(QScrollArea):
 
     def create_marker(self, time_ms: int, type_: CommentType = CommentType.UNDEFINED) -> Marker:
         marker = Marker(time_ms, type_)
-        marker.delete_clicked.connect(self.remove_marker)
+        marker.deleted.connect(self.remove_marker)
 
         key, index = self._get_key_index(marker)
         self._markers[key] = marker

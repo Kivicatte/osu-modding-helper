@@ -70,6 +70,7 @@ class CommentUIElementBase(QWidget):
     activate_clicked = Signal()
     deactivate_clicked = Signal()
     delete_clicked = Signal()
+    deleted = Signal()
 
     _ID = 0
 
@@ -80,7 +81,7 @@ class CommentUIElementBase(QWidget):
         CommentUIElementBase._ID += 1
 
         self.setProperty('active', False)
-        self.setProperty('type', int(type_))
+        self.setProperty('type', type_)
         self._redraw()
 
     @property
@@ -88,7 +89,7 @@ class CommentUIElementBase(QWidget):
         return self._id
 
     def set_type(self, type_: CommentType):
-        self.setProperty('type', int(type_))
+        self.setProperty('type', type_)
         self._redraw()
 
     def activate(self):
@@ -102,6 +103,12 @@ class CommentUIElementBase(QWidget):
     def on_activate(self):
         self.activate_clicked.emit()
 
+    def on_toggle(self):
+        if self.property('active'):
+            self.on_deactivate()
+        else:
+            self.on_activate()
+
     def on_deactivate(self):
         self.deactivate_clicked.emit()
 
@@ -113,3 +120,7 @@ class CommentUIElementBase(QWidget):
         self.style().unpolish(self)
         self.style().polish(self)
         self.update()
+
+    def deleteLater(self):
+        self.deleted.emit()
+        super().deleteLater()
