@@ -2,10 +2,10 @@ from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QSizePolicy, QWidget, QP
 from PySide6.QtCore import Qt, Signal
 
 from ..utils import to_short_timestamp
-from .base import CommentUIElementBase, CommentType, timed_comment_types
+from .base import CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
 
 
-class Marker(CommentUIElementBase):
+class Marker(CommentUIElement):
     def __init__(self, time_ms: int, type_: CommentType = CommentType.UNDEFINED, parent=None):
         super().__init__(type_, parent)
 
@@ -80,15 +80,20 @@ class SectionControls(QWidget):
         self.layout().addWidget(self.clear_button)
 
 
-class MarkerSection(QScrollArea):
+class MarkerSection(CommentUIContainer, QScrollArea):
     new_marker_requested = Signal(int)
 
     def __init__(self, name: str, types: list[CommentType] = None, parent=None):
-        super().__init__(parent)
-
         self.name = name
         self.types = types or []
         self._markers = {}
+
+        QScrollArea.__init__(self, parent)
+        CommentUIContainer.__init__(
+            self,
+            factory=Marker,
+            filter_=lambda t, type_: type_ in self.types
+        )
 
         self._init_ui()
         self._id_shift = self.layout.count() - 1
@@ -142,20 +147,19 @@ class MarkerSection(QScrollArea):
 
         return key, index
 
-    def create_marker(self, time_ms: int, type_: CommentType = CommentType.UNDEFINED) -> Marker:
-        marker = Marker(time_ms, type_)
-        marker.deleted.connect(self.remove_marker)
+    def _add(self, ui_element: Marker):
+        super()._add(ui_element)
 
-        key, index = self._get_key_index(marker)
-        self._markers[key] = marker
-        self.layout.insertWidget(index, marker)
+        key, index = self._get_key_index(ui_element)
+        self._markers[key] = ui_element
+        self.layout.insertWidget(index, ui_element)
 
-        return marker
+    def _remove(self, ui_element: Marker):
+        super()._remove(ui_element)
 
-    def remove_marker(self, marker: Marker):
-        key, index = self._get_key_index(marker)
+        key, index = self._get_key_index(ui_element)
         self._markers.pop(key)
-        self.layout.removeWidget(marker)
+        self.layout.removeWidget(ui_element)
 
     def get(self, time_ms: int) -> Marker | None:
         if self.types[0] in timed_comment_types:

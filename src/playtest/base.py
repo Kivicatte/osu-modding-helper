@@ -3,6 +3,8 @@ from PySide6.QtCore import Signal
 
 from enum import IntEnum, StrEnum
 
+from typing import Callable
+
 
 class CommentType(StrEnum):
     UNDEFINED = 'undef'
@@ -66,7 +68,7 @@ class CommentEditBase(QWidget):
         self.state = CommentEditState.SAVED
 
 
-class CommentUIElementBase(QWidget):
+class CommentUIElement(QWidget):
     activate_clicked = Signal()
     deactivate_clicked = Signal()
     delete_clicked = Signal()
@@ -77,8 +79,8 @@ class CommentUIElementBase(QWidget):
     def __init__(self, type_: CommentType = CommentType.UNDEFINED, parent=None):
         super().__init__(parent)
 
-        self._id = CommentUIElementBase._ID
-        CommentUIElementBase._ID += 1
+        self._id = CommentUIElement._ID
+        CommentUIElement._ID += 1
 
         self.setProperty('active', False)
         self.setProperty('type', type_)
@@ -124,3 +126,27 @@ class CommentUIElementBase(QWidget):
     def deleteLater(self):
         self.deleted.emit()
         super().deleteLater()
+
+
+class CommentUIContainer:
+    def __init__(
+            self,
+            factory: Callable[[int, CommentType], CommentUIElement] = None,
+            filter_: Callable[[int, CommentType], bool] = None
+    ):
+        self._factory = factory or (lambda *_: None)
+        self._filter = filter_ or (lambda *_: False)        # doesn't create UI elements by default
+
+    def create_ui_element(self, time_ms: int, type_: CommentType) -> CommentUIElement | None:
+        if not self._filter(time_ms, type_):
+            return None
+
+        obj = self._factory(time_ms, type_)
+        self._add(obj)
+        return obj
+
+    def _add(self, ui_element: CommentUIElement):
+        ui_element.deleted.connect(self._remove)
+
+    def _remove(self, ui_element: CommentUIElement):
+        ui_element.deleted.disconnect(self._remove)

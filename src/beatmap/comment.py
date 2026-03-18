@@ -8,7 +8,7 @@ from typing import Callable, Iterable
 
 from .data import BeatmapMetadata
 from ..settings import NOTES_PATH
-from ..playtest.base import CommentEditBase, CommentUIElementBase, CommentType
+from ..playtest.base import CommentEditBase, CommentUIElement, CommentType
 from . import search
 
 
@@ -36,7 +36,7 @@ class Comment:
 
         self._active: bool = False
         self._ui_edit: CommentEditBase | None = None
-        self._ui_activation: list[CommentUIElementBase] = []
+        self._ui_activation: list[CommentUIElement] = []
 
     @property
     def id(self):
@@ -79,14 +79,14 @@ class Comment:
         self._ui_edit.edit_finished.disconnect(self._set_text)
         self._ui_edit = None
 
-    def register_activation_ui(self, ui: CommentUIElementBase):
+    def register_activation_ui(self, ui: CommentUIElement):
         self._ui_activation.append(ui)
         ui.activate_clicked.connect(self.on_activate)
         ui.deactivate_clicked.connect(self.on_deactivate)
         ui.delete_clicked.connect(self.delete_activation_ui)
         ui.set_type(self._type)
 
-    def unregister_activation_ui(self, ui: CommentUIElementBase):
+    def unregister_activation_ui(self, ui: CommentUIElement):
         try:
             self._ui_activation.remove(ui)
             ui.activate_clicked.disconnect(self.on_activate)
@@ -179,7 +179,7 @@ class BeatmapComments:
     def attach(
             self,
             edit_ui_callback: Callable[[Comment], CommentEditBase],
-            activate_ui_callbacks: Iterable[Callable[[Comment], CommentUIElementBase]]
+            activate_ui_callbacks: Iterable[Callable[[Comment], CommentUIElement]]
     ):
         for comment in self:
             edit_ui = edit_ui_callback(comment)
@@ -228,7 +228,7 @@ class BeatmapCommentsCollection:
     def __init__(
             self,
             edit_ui_callback: Callable[[Comment], CommentEditBase],
-            activate_ui_callbacks: Iterable[Callable[[Comment], CommentUIElementBase]]
+            activate_ui_callbacks: Iterable[Callable[[Comment], CommentUIElement]]
     ):
         self._edit_ui_callback = edit_ui_callback
         self._activate_ui_callbacks = activate_ui_callbacks
