@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import Qt
 
 from matplotlib.figure import Figure
@@ -53,9 +55,10 @@ comment_styles = {
 
 
 class VLine(CommentUIElement):
-    def __init__(self, time_ms: int, type_: CommentType, canvas: FigureCanvas):
+    def __init__(self, time_ms: int, type_: CommentType, canvas: StrainGraph):
         self._time_ms = time_ms
         self._canvas = canvas
+        self._canvas.add_line(self)
 
         style = comment_styles[type_]
         self._style = style
@@ -64,16 +67,23 @@ class VLine(CommentUIElement):
         self._line = canvas.figure.axes[0].axvline(
             x=time_ms,
             zorder=9,
-            picker=3,
+            picker=2,
             **self._style.base
         )
 
         self._cids = [
-            canvas.mpl_connect('motion_notify_event', self._on_motion),
             canvas.mpl_connect('pick_event', self._on_pick)
         ]
 
         super().__init__(type_, parent=None)
+
+    @property
+    def time_ms(self):
+        return self._time_ms
+
+    @property
+    def line(self):
+        return self._line
 
     def set_type(self, type_: CommentType):
         style = comment_styles[type_]
@@ -81,19 +91,11 @@ class VLine(CommentUIElement):
 
         super().set_type(type_)
 
-    def _set_focus(self, focused: bool = True):
+    def set_focus(self, focused: bool = True):
         if self._focused == focused:
             return
         self._focused = focused
         self._redraw()
-
-    def _on_motion(self, event: MouseEvent):
-        if event.inaxes != self._line.axes:
-            self._set_focus(False)
-            return
-
-        contains, _ = self._line.contains(event)
-        self._set_focus(contains)
 
     def _on_pick(self, event: PickEvent):
         if event.artist is self._line:
@@ -107,6 +109,7 @@ class VLine(CommentUIElement):
     def deleteLater(self):
         for cid in self._cids:
             self._canvas.mpl_disconnect(cid)
+        self._canvas.remove_line(self)
 
         try:
             self._line.remove()
@@ -147,7 +150,28 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         self._plot_style = LineStyles.PLOT.value
         self._cursor_style = LineStyles.CURSOR.value
         self._pointer = None
-        self._bookmarks = {}
+        self._focus: VLine | None = None
+        self._lines = set()
+
+        self._cids = [
+            self.mpl_connect('motion_notify_event', self._on_motion)
+        ]
+
+    def _on_motion(self, event: MouseEvent):
+        if event.inaxes != self.axes:
+            self.set_focus(None)
+            return
+
+        lines_contain = [line for line in self._lines if line.line.contains(event)[0]]
+        match len(lines_contain):
+            case 0:
+                self.set_focus(None)
+            case 1:
+                self.set_focus(lines_contain[0])
+            case _:
+                line = min(lines_contain, key=lambda l: abs(l.time_ms - self._focus.time_ms)) if self._focus \
+                    else lines_contain[0]
+                self.set_focus(line)
 
     @property
     def pointer_position(self):
@@ -173,6 +197,23 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
             self._pointer = None
 
         self.draw()
+
+    def set_focus(self, line: VLine | None):
+        if self._focus is line:
+            return
+
+        if self._focus is not None:
+            self._focus.set_focus(False)
+        self._focus = line
+        if line is not None:
+            line.set_focus(True)
+
+    def add_line(self, line: VLine):
+        self._lines.add(line)
+
+    def remove_line(self, line: VLine):
+        if line in self._lines:
+            self._lines.remove(line)
 
     def plot(self, strains: StrainsData):
         if len(strains.xaxis) < 2:
@@ -207,3 +248,7 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         )
 
         self.draw()
+
+    def __del__(self):
+        for cid in self._cids:
+            self._canvas.mpl_disconnect(cid)
