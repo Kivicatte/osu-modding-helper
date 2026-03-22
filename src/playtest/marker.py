@@ -15,7 +15,9 @@ class Marker(CommentUIElement):
         self.delete_button.clicked.connect(self.on_delete)
 
         self._time_ms = time_ms
-        self.set_text(to_short_timestamp(time_ms))
+
+        text = to_short_timestamp(time_ms) if type_ in timed_comment_types else '--:--'
+        self.set_text(text)
 
     def _init_ui(self):
         self.setAttribute(Qt.WA_StyledBackground, True)
