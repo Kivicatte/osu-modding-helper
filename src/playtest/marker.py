@@ -158,6 +158,8 @@ class MarkerSection(CommentUIContainer, QScrollArea):
         self._markers[key] = ui_element
         self.layout.insertWidget(index, ui_element)
 
+        ui_element.activated.connect(lambda: self.show_marker(ui_element))
+
     def _remove(self, ui_element: Marker):
         super()._remove(ui_element)
 
@@ -165,9 +167,13 @@ class MarkerSection(CommentUIContainer, QScrollArea):
         self._markers.pop(key)
         self.layout.removeWidget(ui_element)
 
-    def get(self, time_ms: int) -> Marker | None:
-        if self.types[0] in timed_comment_types:
-            return self._markers.get(time_ms)
+    def show_marker(self, marker: Marker, margin: int = 20):
+        rect = marker.geometry()
+        x_left = rect.left() - margin
+        x_right = rect.right() - self.viewport().width() + margin
+        current_x = self.horizontalScrollBar().value()
 
-    def clear(self):
-        ...             # TODO: figure our if necessary
+        if current_x > x_left:
+            self.horizontalScrollBar().setValue(max(x_left, 0))
+        elif current_x < x_right:
+            self.horizontalScrollBar().setValue(min(x_right, self.widget().width() - self.viewport().width()))

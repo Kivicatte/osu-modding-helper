@@ -74,6 +74,7 @@ class CommentUIElement(QWidget):
     activate_clicked = Signal()
     deactivate_clicked = Signal()
     delete_clicked = Signal()
+    activated = Signal()
     deleted = Signal()
 
     _ID = 0
@@ -99,6 +100,7 @@ class CommentUIElement(QWidget):
     def activate(self):
         self.setProperty('active', True)
         self._redraw()
+        self.activated.emit()
 
     def deactivate(self):
         self.setProperty('active', False)
