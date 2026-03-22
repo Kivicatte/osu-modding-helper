@@ -107,7 +107,12 @@ class VLine(CommentUIElement):
     def deleteLater(self):
         for cid in self._cids:
             self._canvas.mpl_disconnect(cid)
-        self._line.remove()
+
+        try:
+            self._line.remove()
+        except NotImplementedError:         # already removed
+            pass
+
         self._canvas.draw_idle()
         super().deleteLater()
 

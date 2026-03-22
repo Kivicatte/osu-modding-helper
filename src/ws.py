@@ -89,7 +89,7 @@ class WSProxy(QObject):
         self.state_updated.connect(State.set_state)
         self.time_updated.connect(State.set_time)
 
-        self._state = OsuState.MAIN_MENU
+        self._state = OsuState.UNKNOWN
         self._time_ms = -1000000
         self._combo = 0
         self._map_md5 = ''
@@ -108,8 +108,7 @@ class WSProxy(QObject):
     def update_state(self, state: OsuState | int):
         if state == self._state:
             return
-        if state == OsuState.GAMEPLAY:
-            self._combo = 0
+        self._combo = 0
         try:
             self._state = OsuState(state)
             self.state_updated.emit(int(state))
@@ -184,7 +183,7 @@ class WSProxy(QObject):
             self.update_map(message)
 
         self.update_time(time_ms)
-        if state == OsuState.GAMEPLAY:
+        if state == OsuState.GAMEPLAY and time_ms > message['menu']['bm']['time']['firstObj']:
             self.update_combo(message['gameplay']['combo']['current'], time_ms)
 
     def deleteLater(self):

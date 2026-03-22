@@ -9,6 +9,7 @@ from ..settings import NOTES_PATH
 from ..playtest.base import CommentEditBase, CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
 from . import search
 from ..utils import call_osu
+from .. import settings
 
 
 timed_osu_states = [
@@ -278,18 +279,18 @@ class BeatmapComments:
 class BeatmapCommentsCollection:
     def __init__(self):
         self._current_map: BeatmapComments | None = None
+        self._last_miss: int | None = None
 
-    def on_new_comment_request(self, type_: CommentType = CommentType.UNDEFINED):
+    def on_new_comment_request(self, type_: CommentType = CommentType.UNDEFINED) -> Comment | None:
         if self._current_map is None:
             return
 
         if type_ == CommentType.MISS:
-            self._current_map.create_comment('miss', type_)
-            return
+            return self._current_map.create_comment('miss', type_)
 
         if type_ == CommentType.UNDEFINED:
             type_ = CommentType.TIMELINE if State.osu_state in timed_osu_states else CommentType.GENERAL
-        self._current_map.create_comment('', type_)
+        return self._current_map.create_comment('', type_)
 
     def on_activate_request(self, time_ms: int):
         if self._current_map is None:
@@ -300,7 +301,14 @@ class BeatmapCommentsCollection:
             deactivate_on_fail=(State.osu_state == OsuState.GAMEPLAY)
         )
 
+    def on_miss(self, time_ms: int):
+        if self._last_miss is None or time_ms - self._last_miss > settings.CHAIN_MISS_THRESHOLD_MS:
+            self._current_map.create_comment('miss', CommentType.MISS)
+            self._last_miss = time_ms
+
     def select_map(self, metadata: BeatmapMetadata, forget_current: bool = False):
+        self._last_miss = None
+
         if self._current_map:
             self._current_map.deactivate_comment()
             self._current_map.detach()

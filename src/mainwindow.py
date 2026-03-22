@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         self._wsproxy.state_updated.connect(self.on_state_update)
         self._wsproxy.map_selected.connect(self.on_map_update)
         self._wsproxy.time_updated.connect(self.on_time_update)
-        self._wsproxy.player_missed.connect(lambda _: self._comment_collection.on_new_comment_request(CommentType.MISS))
+        self._wsproxy.player_missed.connect(self._comment_collection.on_miss)
 
         self._osu_state = OsuState.UNKNOWN
 
