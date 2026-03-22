@@ -12,9 +12,11 @@ from PySide6.QtCore import Qt
 
 import sys
 
-from .playtest.notes import PlaytestNotesEdit
+from .playtest.base import CommentType
+from .playtest.comment import PlaytestCommentsEdit
 from .ws import WSProxy, OsuState
-from .beatmap import BeatmapMetadata, BeatmapNotesCollection, StrainsData
+from .beatmap.data import BeatmapMetadata, StrainsData
+from .beatmap.comment import BeatmapCommentsCollection, set_ui, timed_osu_states
 
 
 class MainWindow(QMainWindow):
@@ -24,19 +26,29 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self._init_ui()
-        self.resize(800, 640)
+        self.resize(800, 840)
         self._old_pos = None
+
+        set_ui(
+            ui_edit=self.comments_edit.note_input,
+            ui_containers=[
+                self.comments_edit.graph,
+                *self.comments_edit.markers
+            ]
+        )
+
+        self._comment_collection = BeatmapCommentsCollection()
+        self._comment_collection.load()
+
+        for marker in self.comments_edit.markers:
+            marker.new_marker_requested.connect(self._comment_collection.on_new_comment_request)
 
         self._wsproxy = wsproxy
         self._wsproxy.state_updated.connect(self.on_state_update)
         self._wsproxy.map_selected.connect(self.on_map_update)
-        self._wsproxy.time_updated.connect(self.notes_edit.set_time)
-        self._wsproxy.player_missed.connect(self.notes_edit.on_miss)
+        self._wsproxy.player_missed.connect(lambda _: self._comment_collection.on_new_comment_request(CommentType.MISS))
 
         self._osu_state = OsuState.UNKNOWN
-
-        self._note_collection = BeatmapNotesCollection()
-        self._note_collection.load()
 
     def _init_ui(self):
         central_widget = QWidget()
@@ -84,9 +96,9 @@ class MainWindow(QMainWindow):
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(10, 0, 10, 11)
 
-        self.notes_edit = PlaytestNotesEdit(self)
-        self.notes_edit.setObjectName('notes-edit')
-        content_layout.addWidget(self.notes_edit)
+        self.comments_edit = PlaytestCommentsEdit(self)
+        self.comments_edit.setObjectName('notes-edit')
+        content_layout.addWidget(self.comments_edit)
 
         grip = QSizeGrip(self.content)
         grip_layout = QHBoxLayout()
@@ -97,20 +109,14 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.content)
 
     def on_state_update(self, state: OsuState):
-        time_tracked_states = [OsuState.GAMEPLAY, OsuState.GAMEPLAY_PAUSE, OsuState.GAMEPLAY_FAIL, OsuState.EDIT]
-        if self._osu_state in time_tracked_states:
-            if state not in time_tracked_states:
-                self.notes_edit.graph.remove_pointer()
-        elif state == OsuState.GAMEPLAY:
-            self.notes_edit.init_gameplay()
-
+        if self._osu_state in timed_osu_states:
+            if state not in timed_osu_states:
+                self.comments_edit.graph.remove_pointer()
         self._osu_state = state
 
-        self.notes_edit.set_editor_mode(state == OsuState.EDIT)
-
     def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
-        notes = self._note_collection.select_map(metadata)
-        self.notes_edit.select_map(notes, strains)
+        self._comment_collection.select_map(metadata)
+        self.comments_edit.on_map_update(metadata, strains)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -136,7 +142,7 @@ class MainWindow(QMainWindow):
 
     def close(self):
         self._wsproxy.deleteLater()
-        self._note_collection.save(ignore_list=['miss'])
+        self._comment_collection.save(ignore_list=['miss'])
         super().close()
 
 

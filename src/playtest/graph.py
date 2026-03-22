@@ -108,6 +108,7 @@ class VLine(CommentUIElement):
         for cid in self._cids:
             self._canvas.mpl_disconnect(cid)
         self._line.remove()
+        self._canvas.draw_idle()
         super().deleteLater()
 
 

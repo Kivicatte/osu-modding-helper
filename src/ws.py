@@ -1,6 +1,7 @@
 import os
 import json
 from enum import IntEnum
+from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, QThread, Signal, QUrl
 from PySide6.QtWebSockets import QWebSocket
@@ -25,6 +26,21 @@ class OsuState(IntEnum):
     GAMEPLAY_PAUSE = 100
     GAMEPLAY_FAIL = 101
     UNKNOWN = 1000
+
+
+@dataclass
+class State:
+    osu_state: OsuState = OsuState.UNKNOWN
+    time_ms: int = 0
+
+    def set_state(self, state: OsuState):
+        self.osu_state = state
+
+    def set_time(self, time_ms: int):
+        self.time_ms = time_ms
+
+
+State = State()
 
 
 _url: str = 'ws://localhost:24050/ws'
@@ -70,6 +86,8 @@ class WSProxy(QObject):
         super().__init__()
 
         self._init_ws()
+        self.state_updated.connect(State.set_state)
+        self.time_updated.connect(State.set_time)
 
         self._state = OsuState.MAIN_MENU
         self._time_ms = -1000000

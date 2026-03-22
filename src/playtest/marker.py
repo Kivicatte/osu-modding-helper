@@ -81,7 +81,7 @@ class SectionControls(QWidget):
 
 
 class MarkerSection(CommentUIContainer, QScrollArea):
-    new_marker_requested = Signal(int)
+    new_marker_requested = Signal(str)
 
     def __init__(self, name: str, types: list[CommentType] = None, parent=None):
         self.name = name
@@ -117,6 +117,8 @@ class MarkerSection(CommentUIContainer, QScrollArea):
         self.layout.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         self.label = QLabel(f'{self.name}:')
+        self.label.setFixedWidth(60)
+        self.label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.label.setObjectName('section-label')
         self.layout.addWidget(self.label)
 
@@ -131,10 +133,10 @@ class MarkerSection(CommentUIContainer, QScrollArea):
         self.container.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
 
     def on_marker_add(self):
-        self.new_marker_requested.emit(self.types[0])       # TODO: check if auto-converted to int
+        self.new_marker_requested.emit(self.types[0])
 
     def on_marker_clear(self):
-        for marker in self._markers.values():
+        for marker in list(self._markers.values()):
             marker.on_delete()
 
     def _get_key_index(self, marker: Marker) -> tuple[int, int]:

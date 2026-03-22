@@ -30,6 +30,8 @@ class CommentEditBase(QWidget):
         super().__init__(parent)
 
         self._state = CommentEditState.INIT
+
+    def __post_init__(self):
         self.on_state_change()
 
     @property
@@ -116,7 +118,6 @@ class CommentUIElement(QWidget):
 
     def on_delete(self):
         self.delete_clicked.emit()
-        self.deleteLater()
 
     def _redraw(self):
         self.style().unpolish(self)
@@ -146,7 +147,7 @@ class CommentUIContainer:
         return obj
 
     def _add(self, ui_element: CommentUIElement):
-        ui_element.deleted.connect(self._remove)
+        ui_element.deleted.connect(lambda: self._remove(ui_element))
 
     def _remove(self, ui_element: CommentUIElement):
-        ui_element.deleted.disconnect(self._remove)
+        pass

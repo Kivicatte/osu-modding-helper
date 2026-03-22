@@ -95,11 +95,11 @@ QWidget#miss-marker-container {
     border-radius: 20px;
 }
 
-QWidget#timeline-marker-container[checked=true] {
+QWidget#timeline-marker-container[active=true] {
     border: 2px solid #4a90e2;
 }
 
-QWidget#miss-marker-container[checked=true] {
+QWidget#miss-marker-container[active=true] {
     border: 2px solid #4a90e2;
 }
 
@@ -164,7 +164,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;
 }
 
-QLabel#timeline-section-label {
+QLabel#section-label {
     color: #ccc;
     font-family: Segoe UI;
     font-size: 11pt;
@@ -184,17 +184,4 @@ QPushButton#clear {
     border: 2px solid #cc2222;
     border-radius: 15px;
     padding: 0px 0px 1px 1px;
-}
-
-QPushButton#miss {
-    color: gray;
-    font-size: 8pt;
-    border: 2px solid gray;
-    border-radius: 15px;
-    padding: 0px 0px 1px 1px;
-}
-
-QPushButton#miss:checked {
-    color: #cc2222;
-    border: 2px solid #cc2222;
 }
