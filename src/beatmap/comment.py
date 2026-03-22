@@ -32,7 +32,7 @@ def set_ui(ui_edit: CommentEditBase, ui_containers: list[CommentUIContainer]):
 
 
 def _default_comment_filter(comment: Comment):
-    return not (comment.type != CommentType.MISS and bool(comment.text))
+    return comment.text not in settings.IGNORE_LIST
 
 
 class Comment:
@@ -161,7 +161,10 @@ class BeatmapComments:
         self._active_comment: Comment | None = None
 
     def is_empty(self):
-        return any(filter(_default_comment_filter, self._comments.values()))
+        if len(self._comments) == 0:
+            return True
+
+        return not any(filter(_default_comment_filter, self._comments.values()))
 
     def create_comment(self, text: str = '', type_: CommentType = CommentType.UNDEFINED) -> Comment | None:
         if State.time_ms in self._timestamps and type_ in timed_comment_types:
@@ -268,11 +271,10 @@ class BeatmapComments:
                 raise ValueError(f'Couldn\'t read beatmap comments from dictionary: {d}')
         return obj
 
-    def to_dict(self, ignore_list: list[str] | None = None) -> dict:
-        ignore_list = ignore_list or []
+    def to_dict(self) -> dict:
         return {
             'metadata': self.metadata._asdict(),
-            'comments': [comment.to_dict() for comment in self._comments.values() if comment.text not in ignore_list]
+            'comments': [comment.to_dict() for comment in filter(_default_comment_filter, self._comments.values())]
         }
 
 
@@ -326,11 +328,11 @@ class BeatmapCommentsCollection:
 
         return self._current_map
 
-    def save(self, path_: str = NOTES_PATH, forget_current: bool = False, ignore_list: list[str] = None):
+    def save(self, path_: str = NOTES_PATH, forget_current: bool = False):
         if self._current_map is not None and not forget_current and not self._current_map.is_empty():
             search.add(self._current_map)
 
-        comments = [beatmap.to_dict(ignore_list) for beatmap in search.all_()]
+        comments = [beatmap.to_dict() for beatmap in search.all_()]
         with open(path_, 'w') as f:
             json.dump(comments, f)
 

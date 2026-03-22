@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
 
     def close(self):
         self._wsproxy.deleteLater()
-        self._comment_collection.save(ignore_list=['miss'])
+        self._comment_collection.save()
         super().close()
 
 
