@@ -116,8 +116,8 @@ class MainWindow(QMainWindow):
         self._osu_state = state
 
     def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
-        self._comment_collection.select_map(metadata)
         self.comments_edit.on_map_update(metadata, strains)
+        self._comment_collection.select_map(metadata)
 
     def on_time_update(self, time_ms: int):
         if self._osu_state in timed_osu_states:
