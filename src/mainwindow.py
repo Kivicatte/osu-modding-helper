@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self._wsproxy = wsproxy
         self._wsproxy.state_updated.connect(self.on_state_update)
         self._wsproxy.map_selected.connect(self.on_map_update)
+        self._wsproxy.time_updated.connect(self.on_time_update)
         self._wsproxy.player_missed.connect(lambda _: self._comment_collection.on_new_comment_request(CommentType.MISS))
 
         self._osu_state = OsuState.UNKNOWN
@@ -117,6 +118,11 @@ class MainWindow(QMainWindow):
     def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
         self._comment_collection.select_map(metadata)
         self.comments_edit.on_map_update(metadata, strains)
+
+    def on_time_update(self, time_ms: int):
+        if self._osu_state in timed_osu_states:
+            self.comments_edit.graph.set_pointer(time_ms)
+        self._comment_collection.on_activate_request(time_ms)
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

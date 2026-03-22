@@ -128,8 +128,6 @@ class Comment:
         self._active = True
         for ui in self._ui_activation:
             ui.activate()
-        if self.type in timed_comment_types:
-            call_osu(self.time_ms)
 
     def deactivate(self):
         self._active = False
@@ -201,6 +199,12 @@ class BeatmapComments:
         self._ui_containers.clear()
 
     def activate_comment(self, comment: Comment):
+        if (
+                State.osu_state == OsuState.EDIT and
+                comment.type in timed_comment_types and
+                State.time_ms != comment.time_ms
+        ):
+            call_osu(comment.time_ms)
         if self._active_comment is comment:
             return
         if self._active_comment is not None:
@@ -216,6 +220,13 @@ class BeatmapComments:
         comment.deactivate()
         self._active_comment = None
         self._ui_edit.set_text('')
+
+    def try_activate_at(self, time_ms: int, deactivate_on_fail: bool = False):
+        comment = self._timestamps.get(time_ms)
+        if comment is not None:
+            self.activate_comment(comment)
+        elif deactivate_on_fail:
+            self.deactivate_comment()
 
     def on_comment_edit(self, text: str):
         if self._active_comment is None:
@@ -279,6 +290,15 @@ class BeatmapCommentsCollection:
         if type_ == CommentType.UNDEFINED:
             type_ = CommentType.TIMELINE if State.osu_state in timed_osu_states else CommentType.GENERAL
         self._current_map.create_comment('', type_)
+
+    def on_activate_request(self, time_ms: int):
+        if self._current_map is None:
+            return
+
+        self._current_map.try_activate_at(
+            time_ms=time_ms,
+            deactivate_on_fail=(State.osu_state == OsuState.GAMEPLAY)
+        )
 
     def select_map(self, metadata: BeatmapMetadata, forget_current: bool = False):
         if self._current_map:
