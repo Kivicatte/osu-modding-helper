@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QVBoxLayout
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -13,6 +14,10 @@ from typing import ClassVar
 
 from ..beatmap.data import StrainsData
 from .base import CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
+
+
+_SCALE_MIN = 1.0
+_SCALE_MAX = 20.0
 
 
 @dataclass
@@ -135,7 +140,7 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         self.axes.set_facecolor('none')
         for spine in ['left', 'top', 'right', 'bottom']:
             self.axes.spines[spine].set_visible(False)
-        self.axes.set_position([0.03, 0.11, 0.94, 0.85])
+        self.axes.set_position([0.03, 0.15, 0.94, 0.85])
         self.axes.tick_params(
             axis='both',
             which='both',
@@ -152,9 +157,11 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         self._pointer = None
         self._focus: VLine | None = None
         self._lines = set()
+        self._scale = 1.0
 
         self._cids = [
-            self.mpl_connect('motion_notify_event', self._on_motion)
+            self.mpl_connect('motion_notify_event', self._on_motion),
+            self.mpl_connect('scroll_event', self.on_scroll)
         ]
 
     def _on_motion(self, event: MouseEvent):
@@ -224,13 +231,12 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         self.axes.cla()
         self.axes.plot(time_points, strains, **self._plot_style.base)
 
-        # TODO: handle loooooooooooooooooooong maps
         self.axes.set_xlim(-10, time_points[-1] + 10)
         self.axes.set_xticks(list(range(0, time_points[-1], 30000)))
         to_label = lambda x: f'{x // 2}:30' if x % 2 else f'{x // 2}:00'
         self.axes.set_xticklabels([to_label(x) for x in range(time_points[-1] // 30000 + 1)])
 
-        ymin = -max(strains) * 0.005
+        ymin = -max(strains) * 0.01
         ymax = max(strains) * 1.01 + 0.0001
         self.axes.set_ylim(ymin, ymax)
         self.axes.set_yticks(np.linspace(0, ymax, 5))
@@ -247,8 +253,157 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
             labelbottom=True
         )
 
+        self._scale = 1.0
         self.draw()
+
+    def set_scale(self, scale: float = 1.0, pivot: float | None = None):
+        scale = min(
+            max(
+                _SCALE_MIN,
+                scale
+            ),
+            _SCALE_MAX
+        )
+
+        mult = self._scale / scale
+        if abs(mult - 1) < 0.001:
+            return
+
+        cur_x_min, cur_x_max = self.axes.get_xlim()
+        new_x_max = cur_x_min + (cur_x_max - cur_x_min) * mult
+        self.axes.set_xlim(cur_x_min, new_x_max)
+
+        if pivot is None:
+            pivot = (cur_x_max + cur_x_min) / 2
+        self.center_at(pivot)
+
+        self._scale = scale
+
+    def zoom_in(self, factor: float = 1.2, pivot: float | None = None):
+        self.set_scale(self._scale * factor, pivot)
+
+    def zoom_out(self, factor: float = 1.2, pivot: float | None = None):
+        self.set_scale(self._scale / factor, pivot)
+
+    def center_at(self, center_x: float):
+        xdata = self.axes.lines[0].get_xdata()
+        x_min = xdata[0]
+        x_max = xdata[-1]       # strains data is always ordered
+
+        cur_x_min, cur_x_max = self.axes.get_xlim()
+        cur_w = cur_x_max - cur_x_min
+        center_x = min(
+            max(
+                x_min + cur_w / 2,
+                center_x
+            ),
+            x_max - cur_w / 2
+        )
+
+        self.axes.set_xlim(center_x - cur_w / 2, center_x + cur_w / 2)
+        self.draw_idle()
+
+    def move_right(self, dx: float = 0.1):
+        cur_x_min, cur_x_max = self.axes.get_xlim()
+        new_center = cur_x_min + (cur_x_max - cur_x_min) * (0.5 + dx)
+        self.center_at(new_center)
+
+    def move_left(self, dx: float = 0.1):
+        cur_x_min, cur_x_max = self.axes.get_xlim()
+        new_center = cur_x_min + (cur_x_max - cur_x_min) * (0.5 - dx)
+        self.center_at(new_center)
+
+    def on_scroll(self, event):
+        if event.inaxes != self.axes:
+            return
+
+        modifiers = event.guiEvent.modifiers() if hasattr(event, 'guiEvent') else None
+        if not modifiers:
+            return
+
+        if modifiers & Qt.ControlModifier:
+            if event.button == 'up':
+                self.zoom_in()
+            elif event.button == 'down':
+                self.zoom_out()
+        elif modifiers & Qt.ShiftModifier:
+            if event.button == 'up':
+                self.move_left()
+            elif event.button == 'down':
+                self.move_right()
 
     def __del__(self):
         for cid in self._cids:
             self._canvas.mpl_disconnect(cid)
+
+
+class NavigationPanel(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+        self._init_ui()
+
+    def _init_ui(self):
+        self.setFixedHeight(20)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+        self.setLayout(layout)
+
+        layout.addStretch()
+
+        self.left_button = QPushButton('←')
+        self.left_button.setToolTip('Shift + scroll up')
+
+        self.right_button = QPushButton('→')
+        self.right_button.setToolTip('Shift + scroll down')
+
+        self.zoom_in_button = QPushButton('+')
+        self.zoom_in_button.setToolTip('Ctrl + scroll up')
+
+        self.zoom_out_button = QPushButton('-')
+        self.zoom_out_button.setToolTip('Ctrl + scroll down')
+
+        self.reset_zoom_button = QPushButton('☐')
+
+        for button in [
+                self.left_button,
+                self.zoom_in_button,
+                self.reset_zoom_button,
+                self.zoom_out_button,
+                self.right_button
+        ]:
+            button.setFixedSize(20, 20)
+            button.setObjectName('graph-navigation-button')
+            layout.addWidget(button)
+
+        layout.addStretch()
+
+
+class StrainGraphArea(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+        self._init_ui()
+
+        self.panel.left_button.clicked.connect(lambda: self.graph.move_left())
+        self.panel.right_button.clicked.connect(lambda: self.graph.move_right())
+        self.panel.zoom_in_button.clicked.connect(lambda: self.graph.zoom_in())
+        self.panel.zoom_out_button.clicked.connect(lambda: self.graph.zoom_out())
+        self.panel.reset_zoom_button.clicked.connect(lambda: self.graph.set_scale(1.0))
+
+    def _init_ui(self):
+        self.setContentsMargins(0, 0, 0, 0)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+        self.setLayout(layout)
+
+        self.graph = StrainGraph()
+        layout.addWidget(self.graph)
+
+        self.panel = NavigationPanel()
+        layout.addWidget(self.panel)

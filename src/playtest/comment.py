@@ -4,7 +4,7 @@ from PySide6.QtGui import QPixmap, QImage
 
 from .base import CommentEditBase, CommentEditState, CommentType
 from .info import ImageContainer, Credits
-from .graph import StrainGraph
+from .graph import StrainGraphArea
 from .marker import MarkerSection
 from ..beatmap.comment import BeatmapComments, BeatmapMetadata
 from ..beatmap.data import StrainsData
@@ -107,10 +107,11 @@ class PlaytestCommentsEdit(QWidget):
         for marker in self.markers:
             layout.addWidget(marker)
 
-        self.graph = StrainGraph()
+        self.graph_area = StrainGraphArea()
+        self.graph = self.graph_area.graph
         self.graph.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        layout.addWidget(self.graph, stretch=1)
+        layout.addWidget(self.graph_area, stretch=1)
 
     def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
         self.song_info.set_title(metadata.title)

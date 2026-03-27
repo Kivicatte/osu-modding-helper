@@ -185,3 +185,11 @@ QPushButton#clear {
     border-radius: 15px;
     padding: 0px 0px 1px 1px;
 }
+
+QToolTip {
+    background-color: #252525;
+    color: #aaa;
+    border: none;
+    font-family: Segoe UI;
+    font-size: 11pt;
+}
