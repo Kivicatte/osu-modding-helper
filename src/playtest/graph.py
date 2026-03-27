@@ -63,7 +63,6 @@ class VLine(CommentUIElement):
     def __init__(self, time_ms: int, type_: CommentType, canvas: StrainGraph):
         self._time_ms = time_ms
         self._canvas = canvas
-        self._canvas.add_line(self)
 
         style = comment_styles[type_]
         self._style = style
@@ -81,6 +80,7 @@ class VLine(CommentUIElement):
         ]
 
         super().__init__(type_, parent=None)
+        self._canvas.add_line(self)
 
     @property
     def time_ms(self):
@@ -217,6 +217,14 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
 
     def add_line(self, line: VLine):
         self._lines.add(line)
+
+        def show_line():
+            cur_x_min, cur_x_max = self.axes.get_xlim()
+            line_x = line.time_ms
+            if not cur_x_min <= line_x <= cur_x_max:
+                self.center_at(line_x)
+
+        line.activated.connect(show_line)
 
     def remove_line(self, line: VLine):
         if line in self._lines:
