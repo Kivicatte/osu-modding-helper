@@ -270,12 +270,15 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
             return
 
         cur_x_min, cur_x_max = self.axes.get_xlim()
+        center_x = (cur_x_max + cur_x_min) / 2
         new_x_max = cur_x_min + (cur_x_max - cur_x_min) * mult
         self.axes.set_xlim(cur_x_min, new_x_max)
 
         if pivot is None:
-            pivot = (cur_x_max + cur_x_min) / 2
-        self.center_at(pivot)
+            self.center_at(center_x)
+        else:
+            new_center = pivot + (center_x - pivot) * mult
+            self.center_at(new_center)
 
         self._scale = scale
 
@@ -323,9 +326,9 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
 
         if modifiers & Qt.ControlModifier:
             if event.button == 'up':
-                self.zoom_in()
+                self.zoom_in(pivot=event.xdata)
             elif event.button == 'down':
-                self.zoom_out()
+                self.zoom_out(pivot=event.xdata)
         elif modifiers & Qt.ShiftModifier:
             if event.button == 'up':
                 self.move_left()
@@ -356,9 +359,11 @@ class NavigationPanel(QWidget):
 
         self.left_button = QPushButton('←')
         self.left_button.setToolTip('Shift + scroll up')
+        self.left_button.setAutoRepeat(True)
 
         self.right_button = QPushButton('→')
         self.right_button.setToolTip('Shift + scroll down')
+        self.right_button.setAutoRepeat(True)
 
         self.zoom_in_button = QPushButton('+')
         self.zoom_in_button.setToolTip('Ctrl + scroll up')
@@ -388,8 +393,8 @@ class StrainGraphArea(QWidget):
 
         self._init_ui()
 
-        self.panel.left_button.clicked.connect(lambda: self.graph.move_left())
-        self.panel.right_button.clicked.connect(lambda: self.graph.move_right())
+        self.panel.left_button.clicked.connect(lambda: self.graph.move_left(0.25))
+        self.panel.right_button.clicked.connect(lambda: self.graph.move_right(0.25))
         self.panel.zoom_in_button.clicked.connect(lambda: self.graph.zoom_in())
         self.panel.zoom_out_button.clicked.connect(lambda: self.graph.zoom_out())
         self.panel.reset_zoom_button.clicked.connect(lambda: self.graph.set_scale(1.0))
