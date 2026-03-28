@@ -12,14 +12,6 @@ from pydantic import ValidationError
 from src.settings.settings import settings, reload, user_settings_file
 
 
-def _convert_name(name: str):
-    match name.split('__'):
-        case [name]:
-            return name.replace('_', ' ').capitalize()
-        case [name, unit]:
-            return f"{name.replace('_', ' ').capitalize()} ({unit.replace('_', ' ')})"
-
-
 def _locate(schema: dict, path_: tuple[str, ...]):
     loc = schema
     for p in path_:
@@ -31,21 +23,20 @@ def _locate(schema: dict, path_: tuple[str, ...]):
 def _field_from_schema(schema: dict, path_: tuple[str, ...]):
     field = _locate(schema, path_)
     type_ = field['type']
-    default = field['default']
 
     if type_ == 'string':
-        return StringEdit(default)
+        return StringEdit(field)
     elif type_ == 'boolean':
-        return BoolEdit(default)
+        return BoolEdit(field)
     elif type_ == 'integer':
-        return IntEdit(default)
+        return IntEdit(field)
 
     raise TypeError(f'Unknown type at {"/".join(path_)}: {type_}')
 
 
-def _group_from_schema(name: str, schema: dict, path_: tuple[str, ...]):
+def _group_from_schema(schema: dict, path_: tuple[str, ...]):
     group = _locate(schema, path_)
-    group_widget = SettingsBox(name)
+    group_widget = SettingsBox(group['title'])
 
     for prop_name, prop_schema in group['properties'].items():
 
@@ -53,7 +44,7 @@ def _group_from_schema(name: str, schema: dict, path_: tuple[str, ...]):
             hash_, *ref = ref.split('/')
             assert hash_ == '#'
 
-            subgroup = _group_from_schema(prop_name, schema, tuple(ref))
+            subgroup = _group_from_schema(schema, tuple(ref))
             group_widget.add_group(prop_name, subgroup)
 
         else:
@@ -64,10 +55,11 @@ def _group_from_schema(name: str, schema: dict, path_: tuple[str, ...]):
 
 
 class PropertyEditMixin:
-    def __init__(self, default_value, parent=None):
+    def __init__(self, model: dict, parent=None):
         super().__init__(parent=parent)
 
-        self._default = default_value
+        self._default = model['default']
+        self.title = model['title']
 
     def set_value(self, value):
         raise NotImplementedError()
@@ -80,9 +72,6 @@ class PropertyEditMixin:
 
 
 class StringEdit(PropertyEditMixin, QLineEdit):
-    def __init__(self, default_value, parent=None):
-        super().__init__(default_value, parent)
-
     def set_value(self, value: str):
         self.setText(value)
 
@@ -91,12 +80,23 @@ class StringEdit(PropertyEditMixin, QLineEdit):
 
 
 class IntEdit(PropertyEditMixin, QSpinBox):
-    def __init__(self, default_value, parent=None):
-        super().__init__(default_value, parent)
+    def __init__(self, model: dict, parent=None):
+        super().__init__(model, parent)
 
-        self.setMinimum(1)
-        self.setMaximum(10000)
-        self.setSingleStep(100)
+        if (min_val := model.get('minimum')) is not None:
+            self.setMinimum(min_val)
+        elif (min_val := model.get('exclusiveMinimum')) is not None:
+            self.setMinimum(min_val + 1)
+
+        if (max_val := model.get('maximum')) is not None:
+            self.setMaximum(max_val)
+        elif (max_val := model.get('exclusiveMaximum')) is not None:
+            self.setMaximum(max_val - 1)
+
+        if model['maximum'] > 1000:
+            self.setSingleStep(100)
+        elif model['maximum'] > 100:
+            self.setSingleStep(10)
 
     def set_value(self, value: int):
         self.setValue(value)
@@ -118,7 +118,7 @@ PropertyEdit = StringEdit | IntEdit | BoolEdit
 
 class SettingsBox(QGroupBox):
     def __init__(self, name: str, parent=None):
-        super().__init__(_convert_name(name), parent=parent)
+        super().__init__(name, parent=parent)
 
         self.properties: dict[str, PropertyEdit] = {}
         self.subgroups: dict[str, SettingsBox] = {}
@@ -134,7 +134,7 @@ class SettingsBox(QGroupBox):
 
     def add_property(self, name: str, widget: PropertyEdit):
         self.properties[name] = widget
-        label = QLabel(_convert_name(name))
+        label = QLabel(widget.title)
         label.setFixedWidth(200)
         self.form_layout.addRow(label, widget)
 
@@ -187,7 +187,7 @@ class SettingsForm(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        self.settings_box = _group_from_schema('settings', self._model.model_json_schema(), tuple())
+        self.settings_box = _group_from_schema(self._model.model_json_schema(), tuple())
         layout.addWidget(self.settings_box)
 
         button_layout = QHBoxLayout()
