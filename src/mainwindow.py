@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -11,12 +13,67 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 import sys
+from typing import Iterable, Callable
 
-from .playtest.base import CommentType
 from .playtest.comment import PlaytestCommentsEdit
 from .ws import WSProxy, OsuState
 from .beatmap.data import BeatmapMetadata, StrainsData
 from .beatmap.comment import BeatmapCommentsCollection, set_ui, timed_osu_states
+
+from .settings import settings
+from .settings.gui import SettingsWindow
+
+
+class Modifier:
+    def __init__(self, filter_: Callable[[], bool]):
+        self._filter = filter_
+        self._applied = False
+
+    def _apply(self, obj):
+        raise NotImplementedError()
+
+    def apply(self, obj):
+        if self._filter():
+            self._apply(obj)
+            self._applied = True
+
+    def _revert(self, obj):
+        raise NotImplementedError()
+
+    def revert(self, obj):
+        if self._applied:
+            self._revert(obj)
+            self._applied = False
+
+
+class StayOnTopModifier(Modifier):
+    def _apply(self, obj: MainWindow):
+        obj.stay_on_top = True
+
+    def _revert(self, obj):
+        obj.stay_on_top = False
+
+
+class DeactivateCommentModifier(Modifier):
+    def _apply(self, obj: MainWindow):
+        obj.deactivate_comment_on_cursor_move = True
+
+    def _revert(self, obj):
+        obj.deactivate_comment_on_cursor_move = False
+
+
+class Mode:
+    def __init__(self, parent, modifiers: Iterable[Modifier]):
+        self._parent = parent
+        self._modifiers = list(modifiers)
+
+    def enter(self):
+        for mod in self._modifiers:
+            mod.apply(self._parent)
+
+    def exit(self):
+        for mod in self._modifiers:
+            mod.revert(self._parent)
 
 
 class MainWindow(QMainWindow):
@@ -50,6 +107,24 @@ class MainWindow(QMainWindow):
         self._wsproxy.player_missed.connect(self._comment_collection.on_miss)
 
         self._osu_state = OsuState.UNKNOWN
+
+        self._stay_on_top: bool = False
+        self._deactivate_comment_on_cursor_move: bool = False
+
+        self._playtest_mode = Mode(
+            self,
+            [DeactivateCommentModifier(lambda: settings.playtest_mode.deactivate_comment_on_resume)]
+        )
+        self._edit_mode = Mode(
+            self,
+            [
+                DeactivateCommentModifier(lambda: settings.edit_mode.deactivate_comment_on_scroll),
+                StayOnTopModifier(lambda: settings.edit_mode.stay_on_top)
+            ]
+        )
+        self._cur_mode: Mode | None = None
+
+        self._settings_window = None
 
     def _init_ui(self):
         central_widget = QWidget()
@@ -101,19 +176,65 @@ class MainWindow(QMainWindow):
         self.comments_edit.setObjectName('notes-edit')
         content_layout.addWidget(self.comments_edit)
 
+        self.settings_button = QPushButton('⚙️')
+        self.settings_button.clicked.connect(self.open_settings)
+
         grip = QSizeGrip(self.content)
         grip_layout = QHBoxLayout()
+        grip_layout.addWidget(self.settings_button)
         grip_layout.addStretch()
         grip_layout.addWidget(grip)
         content_layout.addLayout(grip_layout)
 
         main_layout.addWidget(self.content)
 
+    @property
+    def stay_on_top(self):
+        return self._stay_on_top
+
+    @stay_on_top.setter
+    def stay_on_top(self, value: bool):
+        if value == self._stay_on_top:
+            return
+        self._stay_on_top = value
+
+        self.hide()
+        if value:
+            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+            self.show()
+        else:
+            self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
+            self.showMinimized()
+
+    @property
+    def deactivate_comment_on_cursor_move(self):
+        return self._deactivate_comment_on_cursor_move
+
+    @deactivate_comment_on_cursor_move.setter
+    def deactivate_comment_on_cursor_move(self, value: bool):
+        self._deactivate_comment_on_cursor_move = value
+
+    def set_mode(self, mode: Mode | None):
+        if self._cur_mode is not None:
+            self._cur_mode.exit()
+
+        if mode is not None:
+            mode.enter()
+
+        self._cur_mode = mode
+
     def on_state_update(self, state: OsuState):
         if self._osu_state in timed_osu_states:
             if state not in timed_osu_states:
                 self.comments_edit.graph.remove_pointer()
         self._osu_state = state
+
+        if state == OsuState.GAMEPLAY:
+            self.set_mode(self._playtest_mode)
+        elif state == OsuState.EDIT:
+            self.set_mode(self._edit_mode)
+        else:
+            self.set_mode(None)
 
     def on_map_update(self, metadata: BeatmapMetadata, strains: StrainsData):
         self.comments_edit.on_map_update(metadata, strains)
@@ -122,7 +243,18 @@ class MainWindow(QMainWindow):
     def on_time_update(self, time_ms: int):
         if self._osu_state in timed_osu_states:
             self.comments_edit.graph.set_pointer(time_ms)
-        self._comment_collection.on_activate_request(time_ms)
+        self._comment_collection.on_activate_request(time_ms, self._deactivate_comment_on_cursor_move)
+
+    def open_settings(self):
+        self._settings_window = SettingsWindow()
+        self._settings_window.form.quit_requested.connect(self.close_settings)
+        self._settings_window.show()
+
+    def close_settings(self):
+        self._settings_window = None
+        if self._cur_mode is not None:
+            self._cur_mode.exit()
+            self._cur_mode.enter()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

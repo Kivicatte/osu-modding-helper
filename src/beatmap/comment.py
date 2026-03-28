@@ -5,11 +5,10 @@ import json
 
 from ..ws import State, OsuState
 from .data import BeatmapMetadata
-from ..settings import NOTES_PATH
+from ..settings import settings
 from ..playtest.base import CommentEditBase, CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
 from . import search
 from ..utils import call_osu
-from .. import settings
 
 
 timed_osu_states = [
@@ -32,7 +31,11 @@ def set_ui(ui_edit: CommentEditBase, ui_containers: list[CommentUIContainer]):
 
 
 def _default_comment_filter(comment: Comment):
-    return comment.text not in settings.IGNORE_LIST
+    if settings.save_options.ignore_empty_comments and not comment.text:
+        return False
+    if settings.save_options.ignore_default_miss_comments and comment.type == CommentType.MISS and comment.text == 'miss':
+        return False
+    return True
 
 
 class Comment:
@@ -294,17 +297,21 @@ class BeatmapCommentsCollection:
             type_ = CommentType.TIMELINE if State.osu_state in timed_osu_states else CommentType.GENERAL
         return self._current_map.create_comment('', type_)
 
-    def on_activate_request(self, time_ms: int):
+    def on_activate_request(self, time_ms: int, deactivate_on_fail: bool):
         if self._current_map is None:
             return
 
         self._current_map.try_activate_at(
             time_ms=time_ms,
-            deactivate_on_fail=(State.osu_state == OsuState.GAMEPLAY)
+            deactivate_on_fail=deactivate_on_fail
         )
 
     def on_miss(self, time_ms: int):
-        if self._last_miss is None or time_ms - self._last_miss > settings.CHAIN_MISS_THRESHOLD_MS:
+        if (
+                self._last_miss is None or
+                not settings.playtest_mode.merge_chain_misses or
+                time_ms - self._last_miss > settings.playtest_mode.chain_miss_cooldown__ms
+        ):
             self._current_map.create_comment('miss', CommentType.MISS)
             self._last_miss = time_ms
 
@@ -328,7 +335,7 @@ class BeatmapCommentsCollection:
 
         return self._current_map
 
-    def save(self, path_: str = NOTES_PATH, forget_current: bool = False):
+    def save(self, path_: str = settings.save_options.output_file, forget_current: bool = False):
         if self._current_map is not None and not forget_current and not self._current_map.is_empty():
             search.add(self._current_map)
 
@@ -336,7 +343,7 @@ class BeatmapCommentsCollection:
         with open(path_, 'w') as f:
             json.dump(comments, f)
 
-    def load(self, path_: str = NOTES_PATH):
+    def load(self, path_: str = settings.save_options.output_file):
         if os.path.isfile(path_):
             with open(path_, 'r') as f:
                 comments = json.load(f)

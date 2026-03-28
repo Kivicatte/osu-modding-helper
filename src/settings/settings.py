@@ -75,5 +75,10 @@ settings = Settings()
 
 
 def reload(new_settings: BaseSettings | None = None):
-    global settings
-    settings = new_settings or Settings()
+    new_settings = new_settings or Settings()
+
+    for k, v in new_settings.dict().items():
+        if isinstance(v, dict):
+            setattr(settings, k, getattr(settings, k).validate(v))
+        else:
+            setattr(settings, k, v)
