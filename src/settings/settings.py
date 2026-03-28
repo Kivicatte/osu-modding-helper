@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict, JsonConfigSettingsSource, PydanticBaseSettingsSource
 from pydantic import Field
+
+from pathlib import Path
 import os
 
 
@@ -40,7 +42,7 @@ class SaveSettings(BaseSettings):
 
     ignore_empty_comments: bool = True
     ignore_default_miss_comments: bool = True
-    output_file: str = 'comments.json'
+    output_file: Path = 'comments.json'
 
 
 class Settings(BaseSettings):

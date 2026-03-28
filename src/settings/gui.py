@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLineEdit, QSpinBox,
-    QGroupBox, QCheckBox, QPushButton, QLabel
+    QGroupBox, QCheckBox, QPushButton, QLabel, QFileDialog
 )
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Qt
+
 from pydantic_settings import BaseSettings
 from pydantic import ValidationError
+from pathlib import Path
 
 from src.settings.settings import settings, reload, user_settings_file
 
@@ -23,9 +25,12 @@ def _locate(schema: dict, path_: tuple[str, ...]):
 def _field_from_schema(schema: dict, path_: tuple[str, ...]):
     field = _locate(schema, path_)
     type_ = field['type']
+    format_ = field.get('format')
 
-    if type_ == 'string':
+    if type_ == 'string' and format_ is None:
         return StringEdit(field)
+    elif type_ == 'string' and format_ == 'path':
+        return PathEdit(field)
     elif type_ == 'boolean':
         return BoolEdit(field)
     elif type_ == 'integer':
@@ -73,10 +78,48 @@ class PropertyEditMixin:
 
 class StringEdit(PropertyEditMixin, QLineEdit):
     def set_value(self, value: str):
-        self.setText(value)
+        self.setText(str(value))
 
     def get_value(self) -> str:
         return self.text()
+
+
+class PathEdit(PropertyEditMixin, QWidget):
+    def __init__(self, model: dict, parent=None):
+        super().__init__(model, parent)
+
+        self._init_ui()
+
+        self.browse_btn.clicked.connect(self.browse)
+
+    def _init_ui(self):
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        self.path_edit = QLineEdit()
+        self.path_edit.setPlaceholderText('Enter or browse for path...')
+        layout.addWidget(self.path_edit)
+
+        self.browse_btn = QPushButton('Browse...')
+        layout.addWidget(self.browse_btn)
+
+    def browse(self):
+        path_, _ = QFileDialog.getOpenFileName(
+            self,
+            'Select File',
+            self.path_edit.text() or '',
+            'JSON Files (*.json)'
+        )
+
+        if path_:
+            self.path_edit.setText(path_)
+
+    def set_value(self, path_: Path):
+        self.path_edit.setText(str(path_))
+
+    def get_value(self) -> Path:
+        return Path(self.path_edit.text())
 
 
 class IntEdit(PropertyEditMixin, QSpinBox):
@@ -113,7 +156,7 @@ class BoolEdit(PropertyEditMixin, QCheckBox):
         return self.isChecked()
 
 
-PropertyEdit = StringEdit | IntEdit | BoolEdit
+PropertyEdit = StringEdit | IntEdit | BoolEdit | PathEdit
 
 
 class SettingsBox(QGroupBox):
