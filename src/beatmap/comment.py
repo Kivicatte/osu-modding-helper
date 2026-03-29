@@ -10,6 +10,8 @@ from ..playtest.base import CommentEditBase, CommentUIElement, CommentUIContaine
 from . import search
 from ..utils import call_osu
 
+import logging
+
 
 timed_osu_states = [
     OsuState.GAMEPLAY,
@@ -109,7 +111,7 @@ class Comment:
             ui.deactivate_clicked.disconnect(self.on_deactivate)
             ui.delete_clicked.disconnect(self.on_delete)
         except ValueError:
-            print('Attempted to unregister a comment UI element that was already not registered')
+            logging.log(logging.WARNING, 'Attempted to unregister a comment UI element that was not registered')
 
     def delete_activation_ui(self):
         for ui in list(self._ui_activation):

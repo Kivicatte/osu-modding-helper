@@ -8,6 +8,8 @@ from PySide6.QtWebSockets import QWebSocket
 
 from .beatmap.data import StrainsData, BeatmapMetadata
 
+import logging
+
 
 class OsuState(IntEnum):
     MAIN_MENU = 0
@@ -115,7 +117,7 @@ class WSProxy(QObject):
         except ValueError:
             if self._state != OsuState.UNKNOWN:
                 self._state = OsuState.UNKNOWN
-                print(f'Unknown osu state occurred: {state}')
+                logging.log(logging.WARNING, f'Unknown osu state occurred: {state}')
                 self.state_updated.emit(OsuState.UNKNOWN)
 
     def update_time(self, time_ms: int):

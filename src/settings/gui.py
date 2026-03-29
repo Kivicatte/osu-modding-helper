@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLineEdit, QSpinBox,
+    QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLineEdit, QSpinBox,
     QGroupBox, QCheckBox, QPushButton, QLabel, QFileDialog
 )
 from PySide6.QtCore import Qt, Signal
@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from pathlib import Path
 
 from src.settings.settings import settings, reload, user_settings_file
+
+import logging
 
 
 _WINDOW_WIDTH = 800
@@ -261,7 +263,7 @@ class SettingsForm(QWidget):
         try:
             self._model.model_validate(values)
         except ValidationError:
-            print('Could not save due to invalid values')
+            logging.log(logging.WARNING, 'Could not save settings configuration: one or more values are invalid')
             return
 
         model = self._model.model_construct(**values)

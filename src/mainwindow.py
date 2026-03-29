@@ -23,6 +23,10 @@ from .beatmap.comment import BeatmapCommentsCollection, set_ui, timed_osu_states
 from .settings import settings
 from .settings.gui import SettingsWindow
 
+from .logger import configure_logging
+
+configure_logging()
+
 
 class Modifier:
     def __init__(self, filter_: Callable[[], bool]):
