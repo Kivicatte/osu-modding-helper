@@ -83,6 +83,7 @@ class WSProxy(QObject):
     player_missed = Signal(int)
     state_updated = Signal(int)
     map_selected = Signal(object, object)           # BeatmapMetadata and StrainsData
+    quit_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -103,9 +104,11 @@ class WSProxy(QObject):
 
         self._wsthread.started.connect(self._wsworker.run)
         self._wsworker.message_received.connect(self.on_first_message)
-        self._wsworker.finished.connect(self._wsthread.quit)
+        self.quit_requested.connect(self._wsworker.stop)
+        self.quit_requested.connect(self._wsthread.quit)
 
         self._wsthread.start()
+        self._wsthread.finished.connect(self.clean_up)
 
     def update_state(self, state: OsuState | int):
         if state == self._state:
@@ -189,5 +192,10 @@ class WSProxy(QObject):
             self.update_combo(message['gameplay']['combo']['current'], time_ms)
 
     def deleteLater(self):
-        self._wsworker.stop()
+        if self._wsthread.isRunning():
+            self.quit_requested.emit()
+
+    def clean_up(self):
+        self._wsworker.deleteLater()
+        self._wsthread.deleteLater()
         super().deleteLater()
