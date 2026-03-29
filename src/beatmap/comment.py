@@ -140,12 +140,6 @@ class Comment:
         for ui in self._ui_activation:
             ui.deactivate()
 
-    def __del__(self):
-        try:
-            self.delete_activation_ui()
-        except RuntimeError:
-            pass
-
     def to_dict(self):
         return {'type': self._type, 'time_ms': self._time_ms, 'text': self._text}
 
@@ -249,7 +243,8 @@ class BeatmapComments:
             self.deactivate_comment(comment)
         if comment.type in timed_comment_types:
             self._timestamps.pop(comment.time_ms)
-        del self._comments[comment.id]
+        self._comments[comment.id].delete_activation_ui()
+        self._comments.pop(comment.id)
 
     @classmethod
     def from_dict(cls, d: dict) -> BeatmapComments:

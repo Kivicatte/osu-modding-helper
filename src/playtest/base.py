@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal
 
 from enum import IntEnum, StrEnum
+from collections import defaultdict
 
 from typing import Callable
 
@@ -140,6 +141,8 @@ class CommentUIContainer:
         self._factory = factory or (lambda *_: None)
         self._filter = filter_ or (lambda *_: False)        # doesn't create UI elements by default
 
+        self._cleanup_actions = defaultdict(list)
+
     def create_ui_element(self, time_ms: int, type_: CommentType) -> CommentUIElement | None:
         if not self._filter(time_ms, type_):
             return None
@@ -149,7 +152,10 @@ class CommentUIContainer:
         return obj
 
     def _add(self, ui_element: CommentUIElement):
-        ui_element.deleted.connect(lambda: self._remove(ui_element))
+        def connection(): self._remove(ui_element)
+        ui_element.deleted.connect(connection)
+        self._cleanup_actions[ui_element.id].append(lambda: ui_element.deleted.disconnect(connection))
 
     def _remove(self, ui_element: CommentUIElement):
-        pass
+        for action in self._cleanup_actions[ui_element.id]:
+            action()

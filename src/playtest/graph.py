@@ -80,7 +80,6 @@ class VLine(CommentUIElement):
         ]
 
         super().__init__(type_, parent=None)
-        self._canvas.add_line(self)
 
     @property
     def time_ms(self):
@@ -114,7 +113,6 @@ class VLine(CommentUIElement):
     def deleteLater(self):
         for cid in self._cids:
             self._canvas.mpl_disconnect(cid)
-        self._canvas.remove_line(self)
 
         try:
             self._line.remove()
@@ -215,7 +213,8 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
         if line is not None:
             line.set_focus(True)
 
-    def add_line(self, line: VLine):
+    def _add(self, line: VLine):
+        super()._add(line)
         self._lines.add(line)
 
         def show_line():
@@ -225,10 +224,11 @@ class StrainGraph(CommentUIContainer, FigureCanvas):
                 self.center_at(line_x)
 
         line.activated.connect(show_line)
+        self._cleanup_actions[line.id].append(lambda: line.activated.disconnect(show_line))
 
-    def remove_line(self, line: VLine):
-        if line in self._lines:
-            self._lines.remove(line)
+    def _remove(self, line: VLine):
+        super()._remove(line)
+        self._lines.remove(line)
 
     def plot(self, strains: StrainsData):
         if len(strains.xaxis) < 2:
