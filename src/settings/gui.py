@@ -44,9 +44,9 @@ def _field_from_schema(schema: dict, path_: tuple[str, ...]):
     raise TypeError(f'Unknown type at {"/".join(path_)}: {type_}')
 
 
-def _group_from_schema(schema: dict, path_: tuple[str, ...]):
+def _group_from_schema(name: str, schema: dict, path_: tuple[str, ...]):
     group = _locate(schema, path_)
-    group_widget = SettingsBox(group['title'])
+    group_widget = SettingsBox(name)
 
     for prop_name, prop_schema in group['properties'].items():
 
@@ -54,7 +54,7 @@ def _group_from_schema(schema: dict, path_: tuple[str, ...]):
             hash_, *ref = ref.split('/')
             assert hash_ == '#'
 
-            subgroup = _group_from_schema(schema, tuple(ref))
+            subgroup = _group_from_schema(prop_schema['title'], schema, tuple(ref))
             group_widget.add_group(prop_name, subgroup)
 
         else:
@@ -239,7 +239,7 @@ class SettingsForm(QWidget):
         layout.setSpacing(15)
         self.setLayout(layout)
 
-        self.settings_box = _group_from_schema(self._model.model_json_schema(), tuple())
+        self.settings_box = _group_from_schema('Settings', self._model.model_json_schema(), tuple())
         layout.addWidget(self.settings_box)
 
         button_layout = QHBoxLayout()
