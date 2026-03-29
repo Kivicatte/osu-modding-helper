@@ -193,3 +193,111 @@ QToolTip {
     font-family: Segoe UI;
     font-size: 11pt;
 }
+
+QWidget#settings {
+    background: #181818;
+}
+
+
+QWidget#settings QPushButton {
+    font-family: Segoe UI;
+    font-size: 11pt;
+    color: black;
+    background-color: #bbb;
+    border-radius: 4px;
+    height: 23px;
+}
+
+QWidget#settings QPushButton:hover {
+    background-color: #d7d7d7;
+}
+
+QWidget#settings QLabel {
+    font-family: Segoe UI;
+    font-size: 11pt;
+    color: #aaa;
+}
+
+QWidget#settings QGroupBox {
+    font-family: Segoe UI;
+    font-size: 11pt;
+    color: #aaa;
+    border: 2px solid #666;
+    border-radius: 5px;
+    margin-top: 12px;
+}
+
+QWidget#settings QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 15px;
+    padding: 3px 5px;
+}
+
+QWidget#settings QLineEdit {
+    color: #E0E0E0;
+    background-color: #2A2A2A;
+    border: 2px solid #555555;
+    border-radius: 4px;
+    font-size: 14px;
+    min-height: 20px;
+    selection-color: black;
+    selection-background-color: #ddd;
+}
+
+
+QWidget#settings QCheckBox {
+    color: #E0E0E0;
+}
+
+QWidget#settings QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid #555;
+    background-color: #2A2A2A;
+}
+
+QWidget#settings QCheckBox::indicator:pressed {
+    background-color: #1E1E1E;
+}
+
+QWidget#settings QCheckBox::indicator:checked {
+    background-color: #a6a6a6;
+    border: 2px solid #ccc;
+}
+
+QWidget#settings QCheckBox::indicator:checked:pressed {
+    background-color: #bbb;
+}
+
+
+QWidget#settings QSpinBox {
+    color: #E0E0E0;
+    background-color: #2A2A2A;
+    border: 2px solid #555555;
+    border-radius: 4px;
+    font-size: 14px;
+    min-height: 20px;
+    selection-color: black;
+    selection-background-color: #ddd;
+}
+
+QWidget#settings QSpinBox:focus {
+    border: 2px solid #a6a6a6;
+    background-color: #333333;
+}
+
+QWidget#settings QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    border: none;
+    background-color: none;
+}
+
+QWidget#settings QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    border: none;
+    background-color: none;
+}

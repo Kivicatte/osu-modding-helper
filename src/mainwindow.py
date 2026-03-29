@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         title_layout.setContentsMargins(16, 0, 8, 0)
         title_layout.setSpacing(8)
 
-        self.title_label = QLabel('Modding Notes')
+        self.title_label = QLabel('Modding Helper')
         self.title_label.setObjectName('title')
         title_layout.addWidget(self.title_label)
 

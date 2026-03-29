@@ -4,14 +4,17 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLineEdit, QSpinBox,
     QGroupBox, QCheckBox, QPushButton, QLabel, QFileDialog
 )
-from PySide6.QtCore import Signal
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 from pydantic_settings import BaseSettings
 from pydantic import ValidationError
 from pathlib import Path
 
 from src.settings.settings import settings, reload, user_settings_file
+
+
+_WINDOW_WIDTH = 800
+_LABEL_WIDTH = 300
 
 
 def _locate(schema: dict, path_: tuple[str, ...]):
@@ -102,6 +105,7 @@ class PathEdit(PropertyEditMixin, QWidget):
         layout.addWidget(self.path_edit)
 
         self.browse_btn = QPushButton('Browse...')
+        self.browse_btn.setFixedWidth(80)
         layout.addWidget(self.browse_btn)
 
     def browse(self):
@@ -170,6 +174,8 @@ class SettingsBox(QGroupBox):
 
     def _init_ui(self):
         self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(20, 20, 20, 20)
+        self.main_layout.setSpacing(10)
         self.setLayout(self.main_layout)
 
         self.form_layout = QFormLayout()
@@ -178,7 +184,7 @@ class SettingsBox(QGroupBox):
     def add_property(self, name: str, widget: PropertyEdit):
         self.properties[name] = widget
         label = QLabel(widget.title)
-        label.setFixedWidth(200)
+        label.setFixedWidth(_LABEL_WIDTH)
         self.form_layout.addRow(label, widget)
 
     def add_group(self, name: str, widget: SettingsBox):
@@ -228,6 +234,7 @@ class SettingsForm(QWidget):
 
     def _init_ui(self):
         layout = QVBoxLayout()
+        layout.setSpacing(15)
         self.setLayout(layout)
 
         self.settings_box = _group_from_schema(self._model.model_json_schema(), tuple())
@@ -274,15 +281,15 @@ class SettingsWindow(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setFixedWidth(_WINDOW_WIDTH)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window | Qt.WindowStaysOnTopHint)
+        self.setObjectName('settings')
 
         self._init_ui()
 
         self.form.quit_requested.connect(self.close)
 
     def _init_ui(self):
-        self.setFixedWidth(400)
-
         layout = QVBoxLayout()
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(0)
