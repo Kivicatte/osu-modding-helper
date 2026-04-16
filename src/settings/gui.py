@@ -245,10 +245,10 @@ class SettingsForm(QWidget):
         button_layout = QHBoxLayout()
         layout.addLayout(button_layout)
 
-        self.save_and_quit_button = QPushButton('Save and quit')
+        self.save_and_quit_button = QPushButton('Save')
         button_layout.addWidget(self.save_and_quit_button)
 
-        self.quit_no_save_button = QPushButton('Quit without saving')
+        self.quit_no_save_button = QPushButton('Discard')
         button_layout.addWidget(self.quit_no_save_button)
 
         self.restore_defaults_button = QPushButton('Restore defaults')
