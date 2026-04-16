@@ -236,6 +236,10 @@ class BeatmapComments:
     def on_comment_edit(self, text: str):
         if self._active_comment is None:
             self.create_comment(text, CommentType.TIMELINE)
+        elif self._active_comment.type == CommentType.MISS:
+            self.delete_comment(self._active_comment)
+            comment = self.create_comment(text, CommentType.TIMELINE)
+            self.activate_comment(comment)
         else:
             self._active_comment.text = text
         self._ui_edit.save()
