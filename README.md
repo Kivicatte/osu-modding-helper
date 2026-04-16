@@ -4,8 +4,6 @@ A helper tool for playtesting and modding osu! maps.
 
 ## Features
 
----
-
 - **Make comments while playing a map.** 
 Pause, go to the ModdingHelper's window and enter your comment.
 - **Navigate your comments while editing a map.** 
@@ -17,8 +15,6 @@ Your comments for every map are saved when you close the program and loaded when
 
 
 # Installation
-
----
 
 Modding Helper requires [tosu](https://tosu.app/) to work.
 It makes use of the data that tosu reads from osu's memory.
@@ -50,8 +46,6 @@ You still need to run tosu as well.
 
 
 # Usage
-
----
 
 ## Interface breakdown
 
@@ -111,8 +105,6 @@ This may be due to conflict with osu itself and is unlikely to be fixed :c
 
 # Contacts
 
----
-
 For any feedback or questions, feel free to use my [osu profile](https://osu.ppy.sh/users/2790640) 
 or other contacts if you have any.
 
@@ -120,7 +112,5 @@ _If something is broken, check that tosu is running and not spamming errors firs
 
 
 # License
-
----
 
 Osu Modding Helper is licensed under AGPL-3.0-or-later. See the LICENSE file for the full text.
