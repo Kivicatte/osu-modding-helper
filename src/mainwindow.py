@@ -209,6 +209,7 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowFlags(self.windowFlags() & ~Qt.WindowStaysOnTopHint)
             self.showMinimized()
+            self.clearFocus()
 
     @property
     def deactivate_comment_on_cursor_move(self):
@@ -250,6 +251,8 @@ class MainWindow(QMainWindow):
         self._comment_collection.on_activate_request(time_ms, self._deactivate_comment_on_cursor_move)
 
     def open_settings(self):
+        if self._cur_mode is not None:
+            self._cur_mode.exit()
         self._settings_window = SettingsWindow()
         self._settings_window.form.quit_requested.connect(self.close_settings)
         self._settings_window.show()
@@ -257,7 +260,6 @@ class MainWindow(QMainWindow):
     def close_settings(self):
         self._settings_window = None
         if self._cur_mode is not None:
-            self._cur_mode.exit()
             self._cur_mode.enter()
 
     def mousePressEvent(self, event):
