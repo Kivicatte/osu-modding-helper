@@ -159,9 +159,11 @@ class BeatmapComments:
         self._timestamps: dict[int, Comment] = {}
         self._active_comment: Comment | None = None
 
-    def is_empty(self):
+    def is_empty(self, strict: bool = False):
         if len(self._comments) == 0:
             return True
+        if strict:
+            return False
 
         return not any(filter(_default_comment_filter, self._comments.values()))
 
@@ -318,7 +320,7 @@ class BeatmapCommentsCollection:
         if self._current_map:
             self._current_map.deactivate_comment()
             self._current_map.detach()
-            if not forget_current and not self._current_map.is_empty():
+            if not forget_current and not self._current_map.is_empty(strict=True):
                 search.add(self._current_map)
 
         if comments := search.search(metadata):
