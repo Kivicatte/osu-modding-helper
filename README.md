@@ -102,6 +102,9 @@ you can force Modding Helper's window to stay on top when you're editing via set
 If Modding Helper appears unresponsive after entering or exiting the editor with staying on top enabled, try double-clicking it.
 This may be due to conflict with osu itself and is unlikely to be fixed :c
 
+# Security
+
+[Virustotal scan](https://www.virustotal.com/gui/file/cbcca23e11165ce536e24d83ad06e919e692126d1f1bb558f5139b7aa9a237ea/detection) (main executable)
 
 # Contacts
 
