@@ -106,6 +106,10 @@ This may be due to conflict with osu itself and is unlikely to be fixed :c
 
 [Virustotal scan](https://www.virustotal.com/gui/file/cbcca23e11165ce536e24d83ad06e919e692126d1f1bb558f5139b7aa9a237ea/detection) (main executable)
 
+Apparently, I'm living in 2041... No idea how that happened.
+
+![](https://kivicatte.s-ul.eu/dxznKGOA)
+
 # Contacts
 
 For any feedback or questions, feel free to use my [osu profile](https://osu.ppy.sh/users/2790640) 
