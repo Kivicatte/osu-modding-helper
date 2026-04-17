@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QSizePolicy, QWidget, QPushButton, QLabel, QVBoxLayout, QMenu
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QKeySequence
 
 from ..utils import to_short_timestamp
 from .base import CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
@@ -33,6 +34,7 @@ class Marker(CommentUIElement):
         self.button = QPushButton()
         self.button.setObjectName('timeline-marker-label')
         self.button.setCheckable(True)
+        self.button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.button.setFixedSize(49, 40)
         layout.addWidget(self.button)
 
@@ -47,9 +49,14 @@ class Marker(CommentUIElement):
         layout.addWidget(self.delete_button)
 
         self.context_menu = QMenu(self)
-        self.context_menu.addAction('Copy to clipboard').triggered.connect(self.copy_message)
+        copy_action = self.context_menu.addAction('Copy to clipboard')
+        copy_action.setShortcut(QKeySequence('Ctrl+C'))
+        copy_action.triggered.connect(self.copy_message)
+
         if self.property('type') in timed_comment_types:
-            self.context_menu.addAction('Move to current time').triggered.connect(lambda: self.move_to_timestamp())
+            move_action = self.context_menu.addAction('Move to current time')
+            move_action.setShortcut(QKeySequence('Ctrl+M'))
+            move_action.triggered.connect(lambda: self.move_to_timestamp())
 
     @property
     def time_ms(self):

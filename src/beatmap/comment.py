@@ -247,6 +247,11 @@ class BeatmapComments:
         elif deactivate_on_fail:
             self.deactivate_comment()
 
+    def copy_comment(self, comment: Comment | None = None):
+        comment = comment or self._active_comment
+        if comment is not None:
+            comment.copy_message()
+
     def move_comment(self, comment: Comment | None = None, time_ms: int = -1):
         comment = comment or self._active_comment
         if comment is None:
@@ -315,6 +320,10 @@ class BeatmapCommentsCollection:
     def __init__(self):
         self._current_map: BeatmapComments | None = None
         self._last_miss: int | None = None
+
+    @property
+    def current_map(self):
+        return self._current_map
 
     def on_new_comment_request(self, type_: CommentType = CommentType.UNDEFINED) -> Comment | None:
         if self._current_map is None:

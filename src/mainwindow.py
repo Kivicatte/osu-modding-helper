@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QSizeGrip
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QKeySequence
 
 import sys
 from typing import Iterable, Callable
@@ -192,6 +193,16 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(self.content)
 
+        copy_action = QAction('Copy to clipboard', central_widget)
+        copy_action.setShortcut(QKeySequence('Ctrl+C'))
+        copy_action.triggered.connect(self.copy_current_comment)
+        central_widget.addAction(copy_action)
+
+        move_action = QAction('Move to current time', central_widget)
+        move_action.setShortcut(QKeySequence('Ctrl+M'))
+        move_action.triggered.connect(self.move_current_comment)
+        central_widget.addAction(move_action)
+
     @property
     def stay_on_top(self):
         return self._stay_on_top
@@ -283,6 +294,16 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showMaximized()
+
+    def copy_current_comment(self):
+        if self._comment_collection.current_map is None:
+            return
+        self._comment_collection.current_map.copy_comment()
+
+    def move_current_comment(self):
+        if self._comment_collection.current_map is None:
+            return
+        self._comment_collection.current_map.move_comment()
 
     def close(self):
         self._wsproxy.deleteLater()
