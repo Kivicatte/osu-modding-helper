@@ -8,6 +8,8 @@ A helper tool for playtesting and modding osu! maps.
 Pause, go to the ModdingHelper's window and enter your comment.
 - **Navigate your comments while editing a map.** 
 Select a comment in ModdingHelper's window, it will trigger an osu link to the timestamp.
+- **Post your comments.**
+Copypaste them quickly - timestamp included!
 - **Review where you missed.** 
 Combo breaks receive an automatic comment (chain misses have a 1s cooldown by default).
 - **Save your work and finish later.** 
@@ -67,10 +69,15 @@ All comments are tied to a single difficulty, not a mapset.
 - **Select.** Click on comment marker in the marker section or on graph.
 - **Edit.** Select a comment, then edit the message in the input line and press enter.
 When a miss comment is edited, it's automatically converted to a timeline comment.
+- **Copy.** Press Ctrl+C to copy a selected comment to clipboard.
+Timeline comments are copied in \[timestamp] - \[comment] format, ready for posting.
+- **Move.** Press Ctrl+M to move a selected comment to current time.
 - **Delete.** Press X button on comment marker. Press red trash bin button to delete all comments of one type.
 - **Saving** comments is automatic. 
 Ignored comments are dropped between the sessions, the rest are saved
   (see settings). Nothing is dropped during the session.
+
+Copy and move actions can also be done from comment marker's context menu.
 
 ![](https://kivicatte.s-ul.eu/4gfRwg4f)
 
@@ -104,11 +111,7 @@ This may be due to conflict with osu itself and is unlikely to be fixed :c
 
 # Security
 
-[Virustotal scan](https://www.virustotal.com/gui/file/cbcca23e11165ce536e24d83ad06e919e692126d1f1bb558f5139b7aa9a237ea/detection) (main executable)
-
-Apparently, I'm living in 2041... No idea how that happened.
-
-![](https://kivicatte.s-ul.eu/dxznKGOA)
+[Virustotal scan](https://www.virustotal.com/gui/file/26f98e155eb376d4b5e7f3408fead10a626157b39aab9aa9c181c94348934baf) (main executable)
 
 # Contacts
 
