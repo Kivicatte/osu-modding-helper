@@ -310,3 +310,17 @@ QMenu::item {
 QMenu::item:selected {
     background-color: #333;
 }
+
+QWidget#popup {
+    background-color: none;
+}
+
+QWidget#popup QLabel {
+    border: none;
+    border-radius: 10px;
+    background-color: #222;
+    color: #aaa;
+    font-family: Segoe UI;
+    font-size: 10pt;
+    font-style: italic;
+}

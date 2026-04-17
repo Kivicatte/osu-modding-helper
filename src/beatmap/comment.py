@@ -9,7 +9,7 @@ from .data import BeatmapMetadata
 from ..settings import settings
 from ..playtest.base import CommentEditBase, CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
 from . import search
-from ..utils import call_osu, to_osu_timestamp
+from ..utils import call_osu, to_osu_timestamp, display_popup
 
 import logging
 
@@ -153,6 +153,7 @@ class Comment:
             pyperclip.copy(f'{to_osu_timestamp(self._time_ms)} - {self._text.capitalize()}')
         else:
             pyperclip.copy(self._text.capitalize())
+        display_popup('Copied!')
 
     def to_dict(self):
         return {'type': self._type, 'time_ms': self._time_ms, 'text': self._text}
@@ -264,6 +265,8 @@ class BeatmapComments:
         moved_comment = Comment(comment.text, time_ms, comment.type, self)
         self._add_comment(moved_comment)
         self.activate_comment(moved_comment)
+
+        display_popup('Moved!')
 
     def on_comment_edit(self, text: str):
         if self._active_comment is None:
