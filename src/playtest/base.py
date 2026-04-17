@@ -78,6 +78,9 @@ class CommentUIElement(QWidget):
     activated = Signal()
     deleted = Signal()
 
+    move_requested = Signal(int)
+    copy_requested = Signal()
+
     _ID = 0
 
     def __init__(self, type_: CommentType = CommentType.UNDEFINED, parent=None):

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import os
 import json
+import pyperclip
 
 from ..ws import State, OsuState
 from .data import BeatmapMetadata
 from ..settings import settings
 from ..playtest.base import CommentEditBase, CommentUIElement, CommentUIContainer, CommentType, timed_comment_types
 from . import search
-from ..utils import call_osu
+from ..utils import call_osu, to_osu_timestamp
 
 import logging
 
@@ -102,6 +103,8 @@ class Comment:
         ui.activate_clicked.connect(self.on_activate)
         ui.deactivate_clicked.connect(self.on_deactivate)
         ui.delete_clicked.connect(self.on_delete)
+        ui.move_requested.connect(self.on_move)
+        ui.copy_requested.connect(self.copy_message)
         ui.set_type(self._type)
 
     def unregister_activation_ui(self, ui: CommentUIElement):
@@ -110,6 +113,8 @@ class Comment:
             ui.activate_clicked.disconnect(self.on_activate)
             ui.deactivate_clicked.disconnect(self.on_deactivate)
             ui.delete_clicked.disconnect(self.on_delete)
+            ui.move_requested.disconnect(self.on_move)
+            ui.copy_requested.disconnect(self.copy_message)
         except ValueError:
             logging.log(logging.WARNING, 'Attempted to unregister a comment UI element that was not registered')
 
@@ -127,6 +132,9 @@ class Comment:
     def on_deactivate(self):
         self.parent.deactivate_comment(self)
 
+    def on_move(self, time_ms: int = -1):
+        self.parent.move_comment(self, time_ms)
+
     def on_delete(self):
         self.parent.delete_comment(self)
 
@@ -139,6 +147,12 @@ class Comment:
         self._active = False
         for ui in self._ui_activation:
             ui.deactivate()
+
+    def copy_message(self):
+        if self._type in timed_comment_types:
+            pyperclip.copy(f'{to_osu_timestamp(self._time_ms)} - {self._text.capitalize()}')
+        else:
+            pyperclip.copy(self._text.capitalize())
 
     def to_dict(self):
         return {'type': self._type, 'time_ms': self._time_ms, 'text': self._text}
@@ -232,6 +246,19 @@ class BeatmapComments:
             self.activate_comment(comment)
         elif deactivate_on_fail:
             self.deactivate_comment()
+
+    def move_comment(self, comment: Comment | None = None, time_ms: int = -1):
+        comment = comment or self._active_comment
+        if comment is None:
+            return
+
+        if time_ms == -1:
+            time_ms = State.time_ms
+
+        self.delete_comment(comment)
+        moved_comment = Comment(comment.text, time_ms, comment.type, self)
+        self._add_comment(moved_comment)
+        self.activate_comment(moved_comment)
 
     def on_comment_edit(self, text: str):
         if self._active_comment is None:

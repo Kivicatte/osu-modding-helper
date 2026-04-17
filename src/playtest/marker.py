@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QSizePolicy, QWidget, QPushButton, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QSizePolicy, QWidget, QPushButton, QLabel, QVBoxLayout, QMenu
 from PySide6.QtCore import Qt, Signal
 
 from ..utils import to_short_timestamp
@@ -46,12 +46,26 @@ class Marker(CommentUIElement):
         self.delete_button.setFixedSize(20, 20)
         layout.addWidget(self.delete_button)
 
+        self.context_menu = QMenu(self)
+        self.context_menu.addAction('Copy to clipboard').triggered.connect(self.copy_message)
+        if self.property('type') in timed_comment_types:
+            self.context_menu.addAction('Move to current time').triggered.connect(lambda: self.move_to_timestamp())
+
     @property
     def time_ms(self):
         return self._time_ms
 
     def set_text(self, text: str):
         self.button.setText(text)
+
+    def copy_message(self):
+        self.copy_requested.emit()
+
+    def move_to_timestamp(self, time_ms: int = -1):
+        self.move_requested.emit(time_ms)
+
+    def contextMenuEvent(self, event):
+        self.context_menu.exec(event.globalPos())
 
 
 class SectionControls(QWidget):
