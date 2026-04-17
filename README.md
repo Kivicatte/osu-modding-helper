@@ -24,7 +24,7 @@ It makes use of the data that tosu reads from osu's memory.
 ### For users
 
 1. Download [tosu](https://tosu.app/)
-2. Download the [latest release](https://github.com/Kivicatte/osu-modding-helper/releases/latest) of OsuModdingHelper
+2. Download the [latest release](https://github.com/Kivicatte/osu-modding-helper/releases/latest) of OsuModdingHelper (built only for Windows currently)
 3. Unpack and run both (tosu.exe and ModdingHelper.exe)
 
 Tosu opens its dashboard in your browser when launched - 
