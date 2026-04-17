@@ -52,6 +52,7 @@ class Settings(BaseSettings):
         field_title_generator=_convert_field_title
     )
 
+    show_popup_messages: bool = True
     edit_mode: EditSettings = EditSettings()
     playtest_mode: PlaytestSettings = PlaytestSettings()
     save_options: SaveSettings = SaveSettings()

@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget, QGraphicsOpacityEffe
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QPoint
 from PySide6.QtGui import QCursor
 
+from .settings import settings
+
 
 def to_osu_timestamp(time_ms: int):
     s, ms = divmod(time_ms, 1000)
@@ -30,6 +32,9 @@ def call_osu(time_ms: int):
 
 
 def display_popup(message: str):
+    if not settings.show_popup_messages:
+        return
+
     popup = QWidget()
     popup.setObjectName('popup')
     popup.setWindowFlags(
